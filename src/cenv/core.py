@@ -150,3 +150,26 @@ def switch_environment(name: str, force: bool = False) -> None:
 
     # Create new symlink
     claude_dir.symlink_to(target_env)
+
+def delete_environment(name: str) -> None:
+    """Delete an environment"""
+    target_env = get_env_path(name)
+
+    # Check if environment exists
+    if not target_env.exists():
+        raise RuntimeError(f"Environment '{name}' does not exist.")
+
+    # Check if it's currently active
+    current = get_current_environment()
+    if current == name:
+        raise RuntimeError(
+            f"Environment '{name}' is currently active. "
+            "Switch to another environment first."
+        )
+
+    # Check if it's the default environment
+    if name == "default":
+        raise RuntimeError("cannot delete default environment.")
+
+    # Delete the environment
+    shutil.rmtree(target_env)

@@ -24,33 +24,33 @@ def multi_env_setup(monkeypatch, tmp_path):
 
 def test_switch_environment_updates_symlink(multi_env_setup):
     """Test that switching updates ~/.claude symlink"""
-    with patch("cenv.process.is_claude_running", return_value=False):
+    with patch("cenv.core.is_claude_running", return_value=False):
         switch_environment("work", force=True)
 
     assert multi_env_setup["claude"].resolve() == multi_env_setup["envs"] / "work"
 
 def test_switch_environment_raises_if_not_exists(multi_env_setup):
     """Test that switching to non-existent env raises error"""
-    with patch("cenv.process.is_claude_running", return_value=False):
+    with patch("cenv.core.is_claude_running", return_value=False):
         with pytest.raises(RuntimeError, match="does not exist"):
             switch_environment("nonexistent", force=True)
 
 def test_switch_environment_raises_if_claude_running_without_force(multi_env_setup):
     """Test that switching raises if Claude running and force=False"""
-    with patch("cenv.process.is_claude_running", return_value=True):
+    with patch("cenv.core.is_claude_running", return_value=True):
         with pytest.raises(RuntimeError, match="Claude is running"):
             switch_environment("work", force=False)
 
 def test_switch_environment_succeeds_if_claude_running_with_force(multi_env_setup):
     """Test that switching works if Claude running but force=True"""
-    with patch("cenv.process.is_claude_running", return_value=True):
+    with patch("cenv.core.is_claude_running", return_value=True):
         switch_environment("work", force=True)
 
     assert multi_env_setup["claude"].resolve() == multi_env_setup["envs"] / "work"
 
 def test_switch_environment_removes_existing_symlink(multi_env_setup):
     """Test that switching removes old symlink correctly"""
-    with patch("cenv.process.is_claude_running", return_value=False):
+    with patch("cenv.core.is_claude_running", return_value=False):
         switch_environment("work", force=True)
         assert multi_env_setup["claude"].resolve() == multi_env_setup["envs"] / "work"
 

@@ -4,6 +4,7 @@
 from pathlib import Path
 from typing import List, Optional
 import shutil
+from cenv.process import is_claude_running
 
 def get_envs_dir() -> Path:
     """Get the base directory for all environments"""
@@ -124,3 +125,28 @@ def create_environment(name: str, source: str = "default") -> None:
 
     # Copy source to target
     shutil.copytree(source_env, target_env, symlinks=True)
+
+def switch_environment(name: str, force: bool = False) -> None:
+    """Switch to a different environment"""
+    target_env = get_env_path(name)
+
+    # Check if target environment exists
+    if not target_env.exists():
+        raise RuntimeError(f"Environment '{name}' does not exist.")
+
+    # Check if Claude is running
+    if is_claude_running() and not force:
+        raise RuntimeError(
+            "Claude is running. Please exit Claude first or use force=True."
+        )
+
+    claude_dir = get_claude_dir()
+
+    # Remove existing symlink
+    if claude_dir.is_symlink():
+        claude_dir.unlink()
+    elif claude_dir.exists():
+        raise RuntimeError("~/.claude exists but is not a symlink. Cannot switch.")
+
+    # Create new symlink
+    claude_dir.symlink_to(target_env)

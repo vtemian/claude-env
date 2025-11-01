@@ -169,7 +169,7 @@ def delete_environment(name: str) -> None:
 
     # Check if it's the default environment
     if name == "default":
-        raise RuntimeError("cannot delete default environment.")
+        raise RuntimeError("Cannot delete default environment.")
 
     # Delete the environment
     shutil.rmtree(target_env)

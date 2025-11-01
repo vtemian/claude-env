@@ -59,8 +59,8 @@ def test_create_environment_raises_if_default_missing(initialized_envs):
 
 def test_create_environment_from_github_url(initialized_envs):
     """Test creating environment from GitHub repository"""
-    with patch("cenv.github.clone_from_github") as mock_clone:
-        with patch("cenv.github.is_valid_github_url", return_value=True):
+    with patch("cenv.core.clone_from_github") as mock_clone:
+        with patch("cenv.core.is_valid_github_url", return_value=True):
             create_environment("work", source="https://github.com/user/repo")
 
             work_env = initialized_envs["envs"] / "work"
@@ -68,6 +68,6 @@ def test_create_environment_from_github_url(initialized_envs):
 
 def test_create_environment_validates_github_url(initialized_envs):
     """Test that invalid GitHub URL raises error"""
-    with patch("cenv.github.is_valid_github_url", return_value=False):
+    with patch("cenv.core.is_valid_github_url", return_value=False):
         with pytest.raises(ValueError, match="Invalid GitHub URL"):
-            create_environment("work", source="not-a-url")
+            create_environment("work", source="https://not-a-valid-github-url.com")

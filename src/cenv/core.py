@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Optional
 import shutil
 from cenv.process import is_claude_running
+from cenv.github import clone_from_github, is_valid_github_url
 
 def get_envs_dir() -> Path:
     """Get the base directory for all environments"""
@@ -106,7 +107,7 @@ def init_environments() -> None:
         raise RuntimeError(f"Initialization failed: {e}. Configuration restored from backup.")
 
 def create_environment(name: str, source: str = "default") -> None:
-    """Create a new environment by copying from source environment"""
+    """Create a new environment by copying from source environment or GitHub URL"""
     envs_dir = get_envs_dir()
 
     # Check if initialized
@@ -118,13 +119,20 @@ def create_environment(name: str, source: str = "default") -> None:
     if target_env.exists():
         raise RuntimeError(f"Environment '{name}' already exists.")
 
-    # Check if source environment exists
-    source_env = get_env_path(source)
-    if not source_env.exists():
-        raise RuntimeError(f"{source} environment not found.")
+    # Check if source is a GitHub URL
+    if source.startswith("https://") or source.startswith("git@"):
+        if not is_valid_github_url(source):
+            raise ValueError(f"Invalid GitHub URL: {source}")
 
-    # Copy source to target
-    shutil.copytree(source_env, target_env, symlinks=True)
+        clone_from_github(source, target_env)
+    else:
+        # Source is an environment name
+        source_env = get_env_path(source)
+        if not source_env.exists():
+            raise RuntimeError(f"{source} environment not found.")
+
+        # Copy source to target
+        shutil.copytree(source_env, target_env, symlinks=True)
 
 def switch_environment(name: str, force: bool = False) -> None:
     """Switch to a different environment"""

@@ -103,3 +103,24 @@ def init_environments() -> None:
             # Restore original .claude
             shutil.move(str(backup_dir), str(claude_dir))
         raise RuntimeError(f"Initialization failed: {e}. Configuration restored from backup.")
+
+def create_environment(name: str, source: str = "default") -> None:
+    """Create a new environment by copying from source environment"""
+    envs_dir = get_envs_dir()
+
+    # Check if initialized
+    if not envs_dir.exists():
+        raise RuntimeError("cenv not initialized. Run 'cenv init' first.")
+
+    # Check if environment already exists
+    target_env = get_env_path(name)
+    if target_env.exists():
+        raise RuntimeError(f"Environment '{name}' already exists.")
+
+    # Check if source environment exists
+    source_env = get_env_path(source)
+    if not source_env.exists():
+        raise RuntimeError(f"{source} environment not found.")
+
+    # Copy source to target
+    shutil.copytree(source_env, target_env, symlinks=True)

@@ -44,6 +44,13 @@ def test_clone_from_github_calls_git_clone(mock_run):
         assert "clone" in call_args[0][0]
         assert "https://github.com/user/repo" in call_args[0][0]
 
+def test_clone_from_github_raises_on_invalid_url():
+    """Test that clone raises ValueError for invalid URL"""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        target = Path(tmpdir) / "test-env"
+        with pytest.raises(ValueError, match="Invalid GitHub URL"):
+            clone_from_github("not-a-url", target)
+
 @patch("subprocess.run")
 def test_clone_from_github_raises_on_git_error(mock_run):
     """Test that clone raises error if git clone fails"""

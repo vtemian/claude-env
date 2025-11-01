@@ -45,7 +45,8 @@ def test_init_raises_if_already_initialized(mock_dirs):
     """Test that init raises error if already initialized"""
     init_environments()
 
-    with pytest.raises(RuntimeError, match="already initialized"):
+    # After successful init, ~/.claude is a symlink, so that error takes precedence
+    with pytest.raises(RuntimeError, match="already a symlink"):
         init_environments()
 
 def test_init_raises_if_claude_is_already_symlink(mock_dirs):
@@ -55,3 +56,23 @@ def test_init_raises_if_claude_is_already_symlink(mock_dirs):
 
     with pytest.raises(RuntimeError, match="already a symlink"):
         init_environments()
+
+def test_init_restores_backup_on_failure(mock_dirs):
+    """Test that init restores original ~/.claude if operation fails"""
+    original_content = (mock_dirs["claude"] / "CLAUDE.md").read_text()
+
+    # Mock symlink_to to fail
+    with patch("pathlib.Path.symlink_to", side_effect=OSError("Simulated failure")):
+        with pytest.raises(RuntimeError, match="Initialization failed"):
+            init_environments()
+
+    # Verify ~/.claude was restored
+    assert mock_dirs["claude"].exists()
+    assert not mock_dirs["claude"].is_symlink()
+    assert (mock_dirs["claude"] / "CLAUDE.md").exists()
+    assert (mock_dirs["claude"] / "CLAUDE.md").read_text() == original_content
+
+    # Verify envs_dir was cleaned up or never fully created
+    # (depending on where the failure occurred)
+    if mock_dirs["envs"].exists():
+        assert not (mock_dirs["envs"] / "default").exists()

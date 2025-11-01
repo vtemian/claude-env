@@ -55,23 +55,51 @@ def init_environments() -> None:
     envs_dir = get_envs_dir()
     default_env = get_env_path("default")
 
-    # Check if already initialized
-    if envs_dir.exists():
-        raise RuntimeError("cenv already initialized. ~/.claude-envs exists.")
-
     # Check if ~/.claude is already a symlink
     if claude_dir.is_symlink():
         raise RuntimeError("~/.claude is already a symlink. Cannot initialize.")
 
-    # Create envs directory
-    envs_dir.mkdir(parents=True, exist_ok=True)
+    # Check if already initialized
+    if envs_dir.exists():
+        raise RuntimeError("cenv already initialized. ~/.claude-envs exists.")
 
-    # Move ~/.claude to default environment
-    if claude_dir.exists():
-        shutil.move(str(claude_dir), str(default_env))
-    else:
-        # Create empty default environment
-        default_env.mkdir(parents=True, exist_ok=True)
+    # Create backup if claude_dir exists
+    backup_dir = None
+    if claude_dir.exists() and not claude_dir.is_symlink():
+        backup_dir = claude_dir.parent / ".claude.backup"
+        shutil.copytree(claude_dir, backup_dir)
 
-    # Create symlink
-    claude_dir.symlink_to(default_env)
+    try:
+        # Create envs directory
+        envs_dir.mkdir(parents=True, exist_ok=True)
+
+        # Move ~/.claude to default environment
+        if claude_dir.exists():
+            shutil.move(str(claude_dir), str(default_env))
+        else:
+            # Create empty default environment
+            default_env.mkdir(parents=True, exist_ok=True)
+
+        # Create symlink
+        claude_dir.symlink_to(default_env)
+
+        # Clean up backup on success
+        if backup_dir and backup_dir.exists():
+            shutil.rmtree(backup_dir)
+
+    except Exception as e:
+        # Restore from backup if anything failed
+        if backup_dir and backup_dir.exists():
+            # Clean up any partial state
+            if claude_dir.exists():
+                if claude_dir.is_symlink():
+                    claude_dir.unlink()
+                else:
+                    shutil.rmtree(claude_dir)
+            if default_env.exists():
+                shutil.rmtree(default_env)
+            if envs_dir.exists() and not any(envs_dir.iterdir()):
+                envs_dir.rmdir()
+            # Restore original .claude
+            shutil.move(str(backup_dir), str(claude_dir))
+        raise RuntimeError(f"Initialization failed: {e}. Configuration restored from backup.")

@@ -1,3 +1,5 @@
+# ABOUTME: Tests for environment switching functionality
+# ABOUTME: Verifies symlink management, process detection, and safety checks
 import pytest
 from pathlib import Path
 from cenv.core import switch_environment

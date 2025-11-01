@@ -44,5 +44,5 @@ def test_delete_environment_raises_if_currently_active(multi_env_setup):
 def test_delete_environment_raises_if_default(multi_env_setup):
     """Test that deleting default environment raises error"""
     with patch("cenv.core.get_current_environment", return_value="work"):
-        with pytest.raises(RuntimeError, match="cannot delete default"):
+        with pytest.raises(RuntimeError, match="Cannot delete default"):
             delete_environment("default")

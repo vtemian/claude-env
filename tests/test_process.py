@@ -4,18 +4,25 @@ import pytest
 from unittest.mock import Mock, patch
 from cenv.process import is_claude_running, get_claude_processes
 
-def test_is_claude_running_returns_false_when_no_processes():
-    """Test returns False when no Claude processes found"""
-    with patch("cenv.process.get_claude_processes", return_value=[]):
-        result = is_claude_running()
-        assert result is False
+def test_is_claude_running_detects_processes():
+    """Test is_claude_running() returns correct boolean based on actual process detection"""
+    # Test when no Claude processes exist
+    mock_proc_no_claude = Mock()
+    mock_proc_no_claude.info = {"pid": 456, "name": "python", "cmdline": ["python", "script.py"]}
 
-def test_is_claude_running_returns_true_when_processes_exist():
-    """Test returns True when Claude processes found"""
-    mock_process = Mock()
-    with patch("cenv.process.get_claude_processes", return_value=[mock_process]):
-        result = is_claude_running()
-        assert result is True
+    with patch("psutil.process_iter", return_value=[mock_proc_no_claude]):
+        assert is_claude_running() is False
+
+    # Test when Claude process exists
+    mock_proc_claude = Mock()
+    mock_proc_claude.info = {"pid": 123, "name": "node", "cmdline": ["/usr/bin/node", "/path/to/bin/claude"]}
+
+    with patch("psutil.process_iter", return_value=[mock_proc_claude]):
+        assert is_claude_running() is True
+
+    # Test mixed processes
+    with patch("psutil.process_iter", return_value=[mock_proc_no_claude, mock_proc_claude]):
+        assert is_claude_running() is True
 
 def test_get_claude_processes_finds_claude_node_processes():
     """Test that get_claude_processes finds node processes running claude"""

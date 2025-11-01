@@ -3,7 +3,7 @@
 import psutil
 from typing import List
 
-def get_claude_processes() -> List:
+def get_claude_processes() -> List[psutil.Process]:
     """Get all running Claude Code processes"""
     claude_processes = []
 
@@ -13,7 +13,9 @@ def get_claude_processes() -> List:
             info = proc.info
             cmdline = info.get("cmdline", [])
             if cmdline and any("claude" in str(arg).lower() for arg in cmdline):
-                # Check if it's actually the claude binary/node process
+                # Platform assumption: Claude Code runs as a node process with "bin/claude" in the command line
+                # This detection logic is designed for Unix-like systems where the Claude binary is typically
+                # installed in a bin directory and executed via node
                 if info.get("name") == "node" and any("bin/claude" in str(arg) for arg in cmdline):
                     claude_processes.append(proc)
         except (psutil.AccessDenied, psutil.NoSuchProcess, AttributeError):

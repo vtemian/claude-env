@@ -52,3 +52,23 @@ def create(name: str, from_repo: str):
     except (RuntimeError, ValueError) as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)
+
+@cli.command()
+@click.argument("name")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
+def use(name: str, force: bool):
+    """Switch to a different environment"""
+    try:
+        # Check if Claude is running
+        if is_claude_running() and not force:
+            click.echo("⚠️  Claude is running. Switching environments may cause issues.")
+            if not click.confirm("Continue anyway?"):
+                click.echo("Cancelled.")
+                return
+            force = True
+
+        switch_environment(name, force=force)
+        click.echo(f"✓ Switched to environment '{name}'")
+    except RuntimeError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)

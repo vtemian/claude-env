@@ -13,6 +13,10 @@ from cenv.exceptions import (
     ClaudeRunningError,
     InitializationError,
     GitOperationError,
+    InvalidBackupFormatError,
+    SymlinkStateError,
+    ActiveEnvironmentError,
+    ProtectedEnvironmentError,
 )
 from cenv.platform_utils import check_platform_compatibility, PlatformNotSupportedError
 
@@ -83,7 +87,7 @@ def restore_from_trash(backup_name: str) -> str:
     # Extract original name
     parts = backup_name.rsplit("-", 2)
     if len(parts) != 3:
-        raise ValueError(f"Invalid backup name format: {backup_name}")
+        raise InvalidBackupFormatError(backup_name)
 
     name = parts[0]
     target_path = get_env_path(name)
@@ -289,7 +293,7 @@ def switch_environment(name: str, force: bool = False) -> None:
         claude_dir.unlink()
     elif claude_dir.exists():
         logger.error(f"{claude_dir} exists but is not a symlink")
-        raise RuntimeError("~/.claude exists but is not a symlink. Cannot switch.")
+        raise SymlinkStateError("~/.claude exists but is not a symlink. Cannot switch.")
 
     # Create new symlink
     logger.debug(f"Creating symlink {claude_dir} -> {target_env}")
@@ -310,15 +314,12 @@ def delete_environment(name: str) -> None:
     current = get_current_environment()
     if current == name:
         logger.error(f"Cannot delete active environment '{name}'")
-        raise RuntimeError(
-            f"Environment '{name}' is currently active. "
-            "Switch to another environment first."
-        )
+        raise ActiveEnvironmentError(name)
 
     # Check if it's the default environment
     if name == "default":
         logger.error("Cannot delete default environment")
-        raise RuntimeError("Cannot delete default environment.")
+        raise ProtectedEnvironmentError(name)
 
     # Create trash directory if it doesn't exist
     trash_dir = get_trash_dir()

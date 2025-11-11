@@ -50,3 +50,38 @@ class GitOperationError(CenvError):
 class PlatformNotSupportedError(CenvError):
     """Raised when cenv is run on an unsupported platform"""
     pass
+
+
+class InvalidBackupFormatError(CenvError):
+    """Raised when backup name format is invalid"""
+    def __init__(self, backup_name: str):
+        self.backup_name = backup_name
+        super().__init__(
+            f"Invalid backup name format: {backup_name}\n"
+            f"Expected format: <env-name>-YYYYMMDD-HHMMSS"
+        )
+
+
+class SymlinkStateError(CenvError):
+    """Raised when symlink is in unexpected state"""
+    pass
+
+
+class ActiveEnvironmentError(CenvError):
+    """Raised when attempting to delete active environment"""
+    def __init__(self, name: str):
+        self.name = name
+        super().__init__(
+            f"Environment '{name}' is currently active. "
+            "Switch to another environment first."
+        )
+
+
+class ProtectedEnvironmentError(CenvError):
+    """Raised when attempting to delete protected environment"""
+    def __init__(self, name: str):
+        self.name = name
+        super().__init__(
+            f"Cannot delete protected environment '{name}'. "
+            f"The '{name}' environment is required for cenv to function."
+        )

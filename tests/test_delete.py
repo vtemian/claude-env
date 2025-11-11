@@ -10,7 +10,11 @@ from cenv.core import (
     init_environments,
     create_environment,
 )
-from cenv.exceptions import EnvironmentNotFoundError
+from cenv.exceptions import (
+    EnvironmentNotFoundError,
+    ActiveEnvironmentError,
+    ProtectedEnvironmentError,
+)
 from unittest.mock import patch
 
 @pytest.fixture
@@ -47,13 +51,13 @@ def test_delete_environment_raises_if_not_exists(multi_env_setup):
 
 def test_delete_environment_raises_if_currently_active(multi_env_setup):
     """Test that deleting active environment raises error"""
-    with pytest.raises(RuntimeError, match="currently active"):
+    with pytest.raises(ActiveEnvironmentError):
         delete_environment("default")
 
 def test_delete_environment_raises_if_default(multi_env_setup):
     """Test that deleting default environment raises error"""
     with patch("cenv.core.get_current_environment", return_value="work"):
-        with pytest.raises(RuntimeError, match="Cannot delete default"):
+        with pytest.raises(ProtectedEnvironmentError):
             delete_environment("default")
 
 def test_get_trash_dir_returns_correct_path():

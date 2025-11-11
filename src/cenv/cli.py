@@ -30,7 +30,7 @@ from cenv.exceptions import CenvError
     type=click.Path(path_type=Path),
     help="Write logs to file"
 )
-def cli(verbose: bool, log_file: Path):
+def cli(verbose: bool, log_file: Path) -> None:
     """cenv - Claude environment manager
 
     Manage isolated Claude Code configurations like pyenv manages Python versions.
@@ -39,7 +39,7 @@ def cli(verbose: bool, log_file: Path):
     setup_logging(level=level, log_file=log_file)
 
 @cli.command()
-def init():
+def init() -> None:
     """Initialize cenv by migrating ~/.claude to ~/.claude-envs/default/"""
     try:
         init_environments()
@@ -57,7 +57,7 @@ def init():
     help="Clone from GitHub repository URL",
     metavar="URL",
 )
-def create(name: str, from_repo: str):
+def create(name: str, from_repo: str) -> None:
     """Create a new environment"""
     try:
         source = from_repo if from_repo else "default"
@@ -74,7 +74,7 @@ def create(name: str, from_repo: str):
 @cli.command()
 @click.argument("name")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
-def use(name: str, force: bool):
+def use(name: str, force: bool) -> None:
     """Switch to a different environment"""
     try:
         # Check if Claude is running
@@ -92,7 +92,7 @@ def use(name: str, force: bool):
         raise SystemExit(1)
 
 @cli.command()
-def list():
+def list() -> None:
     """List all environments"""
     envs = list_environments()
     current = get_current_environment()
@@ -108,7 +108,7 @@ def list():
         click.echo(f"{marker}{env}")
 
 @cli.command()
-def current():
+def current() -> None:
     """Show the currently active environment"""
     current_env = get_current_environment()
 
@@ -121,7 +121,7 @@ def current():
 @cli.command()
 @click.argument("name")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
-def delete(name: str, force: bool):
+def delete(name: str, force: bool) -> None:
     """Delete an environment (moves to trash)"""
     try:
         if not force:
@@ -138,7 +138,7 @@ def delete(name: str, force: bool):
         raise SystemExit(1)
 
 @cli.command()
-def trash():
+def trash() -> None:
     """List deleted environments in trash"""
     backups = list_trash()
 
@@ -155,7 +155,7 @@ def trash():
 
 @cli.command()
 @click.argument("backup_name")
-def restore(backup_name: str):
+def restore(backup_name: str) -> None:
     """Restore an environment from trash"""
     try:
         name = restore_from_trash(backup_name)

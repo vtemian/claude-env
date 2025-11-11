@@ -24,7 +24,7 @@ class EnvironmentExistsError(CenvError):
 
 class ClaudeRunningError(CenvError):
     """Raised when Claude Code is running and operation requires it to be stopped"""
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(
             "Claude Code is currently running. "
             "Please exit Claude before performing this operation."

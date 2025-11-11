@@ -33,7 +33,7 @@ def get_trash_dir() -> Path:
     """Get the trash directory for deleted environments"""
     return get_envs_dir() / ".trash"
 
-def list_trash() -> List[dict]:
+def list_trash() -> List[dict[str, str]]:
     """List backups in trash
 
     Returns:

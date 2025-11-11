@@ -77,3 +77,43 @@ def test_init_restores_backup_on_failure(mock_dirs):
     # (depending on where the failure occurred)
     if mock_dirs["envs"].exists():
         assert not (mock_dirs["envs"] / "default").exists()
+
+def test_concurrent_init_only_one_succeeds(tmp_path, monkeypatch):
+    """Test that concurrent initialization is safe"""
+    import threading
+    import time
+
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
+    # Create a .claude directory to initialize from
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+    (claude_dir / "test.txt").write_text("test")
+
+    results = []
+
+    def init_thread():
+        try:
+            init_environments()
+            results.append("success")
+        except InitializationError:
+            results.append("failed")
+        except Exception as e:
+            results.append(f"error: {type(e).__name__}")
+
+    # Launch multiple threads trying to init
+    threads = [threading.Thread(target=init_thread) for _ in range(5)]
+
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    # Only one should succeed, the rest should fail with InitializationError
+    success_count = results.count("success")
+    failed_count = results.count("failed")
+
+    assert success_count == 1, f"Expected exactly 1 success, got {success_count}. Results: {results}"
+    assert failed_count >= 3, f"Expected at least 3 failures (got {failed_count}). Results: {results}"
+    assert success_count + failed_count >= 4, f"Expected mostly successes and failures. Results: {results}"

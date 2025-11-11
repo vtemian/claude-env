@@ -130,71 +130,100 @@ def environment_exists(name: str) -> bool:
 
 def init_environments() -> None:
     """Initialize cenv by migrating ~/.claude to ~/.claude-envs/default/"""
+    import fcntl
+    import tempfile
+
     logger.info("Initializing cenv")
     claude_dir = get_claude_dir()
     envs_dir = get_envs_dir()
     default_env = get_env_path("default")
 
-    # Check if ~/.claude is already a symlink
-    if claude_dir.is_symlink():
-        logger.error("~/.claude is already a symlink")
-        raise InitializationError("~/.claude is already a symlink. Cannot initialize.")
-
-    # Check if already initialized
-    if envs_dir.exists():
-        logger.error("cenv already initialized")
-        raise InitializationError("cenv already initialized. ~/.claude-envs exists.")
-
-    # Create backup if claude_dir exists
-    backup_dir = None
-    if claude_dir.exists() and not claude_dir.is_symlink():
-        backup_dir = claude_dir.parent / ".claude.backup"
-        logger.info(f"Creating backup at {backup_dir}")
-        shutil.copytree(claude_dir, backup_dir)
+    # Use lock file to prevent concurrent initialization
+    lock_file_path = Path(tempfile.gettempdir()) / "cenv-init.lock"
+    lock_file = None
 
     try:
-        # Create envs directory
-        logger.debug(f"Creating envs directory at {envs_dir}")
-        envs_dir.mkdir(parents=True, exist_ok=True)
+        lock_file = open(lock_file_path, "w")
+        # Try to acquire exclusive lock (non-blocking)
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise InitializationError(
+                "Another cenv initialization is in progress. Please wait."
+            )
 
-        # Move ~/.claude to default environment
-        if claude_dir.exists():
-            logger.info(f"Moving {claude_dir} to {default_env}")
-            shutil.move(str(claude_dir), str(default_env))
-        else:
-            # Create empty default environment
-            logger.info(f"Creating empty default environment at {default_env}")
-            default_env.mkdir(parents=True, exist_ok=True)
+        # Check if ~/.claude is already a symlink
+        if claude_dir.is_symlink():
+            logger.error("~/.claude is already a symlink")
+            raise InitializationError("~/.claude is already a symlink. Cannot initialize.")
 
-        # Create symlink
-        logger.info(f"Creating symlink {claude_dir} -> {default_env}")
-        claude_dir.symlink_to(default_env)
+        # Check if already initialized
+        if envs_dir.exists():
+            logger.error("cenv already initialized")
+            raise InitializationError("cenv already initialized. ~/.claude-envs exists.")
 
-        # Clean up backup on success
-        if backup_dir and backup_dir.exists():
-            logger.debug(f"Removing backup at {backup_dir}")
-            shutil.rmtree(backup_dir)
+        # Create backup if claude_dir exists
+        backup_dir = None
+        if claude_dir.exists() and not claude_dir.is_symlink():
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+            backup_dir = claude_dir.parent / f".claude.backup.{timestamp}"
+            logger.info(f"Creating backup at {backup_dir}")
+            shutil.copytree(claude_dir, backup_dir)
 
-        logger.info("Initialization complete")
+        try:
+            # Create envs directory
+            logger.debug(f"Creating envs directory at {envs_dir}")
+            envs_dir.mkdir(parents=True, exist_ok=True)
 
-    except Exception as e:
-        logger.error(f"Initialization failed: {e}")
-        # Restore from backup if anything failed
-        if backup_dir and backup_dir.exists():
-            logger.info(f"Restoring from backup at {backup_dir}")
-            # Clean up any partial state
+            # Move ~/.claude to default environment
             if claude_dir.exists():
-                if claude_dir.is_symlink():
-                    claude_dir.unlink()
-                else:
-                    shutil.rmtree(claude_dir)
-            if default_env.exists():
-                shutil.rmtree(default_env)
-            if envs_dir.exists() and not any(envs_dir.iterdir()):
-                envs_dir.rmdir()
-            # Restore original .claude
-            shutil.move(str(backup_dir), str(claude_dir))
-        raise InitializationError(f"Initialization failed: {e}. Configuration restored from backup.")
+                logger.info(f"Moving {claude_dir} to {default_env}")
+                shutil.move(str(claude_dir), str(default_env))
+            else:
+                # Create empty default environment
+                logger.info(f"Creating empty default environment at {default_env}")
+                default_env.mkdir(parents=True, exist_ok=True)
+
+            # Create symlink
+            logger.info(f"Creating symlink {claude_dir} -> {default_env}")
+            claude_dir.symlink_to(default_env)
+
+            # Clean up backup on success
+            if backup_dir and backup_dir.exists():
+                logger.debug(f"Removing backup at {backup_dir}")
+                shutil.rmtree(backup_dir)
+
+            logger.info("Initialization complete")
+
+        except Exception as e:
+            logger.error(f"Initialization failed: {e}")
+            # Restore from backup if anything failed
+            if backup_dir and backup_dir.exists():
+                logger.info(f"Restoring from backup at {backup_dir}")
+                # Clean up any partial state
+                if claude_dir.exists():
+                    if claude_dir.is_symlink():
+                        claude_dir.unlink()
+                    else:
+                        shutil.rmtree(claude_dir)
+                if default_env.exists():
+                    shutil.rmtree(default_env)
+                if envs_dir.exists() and not any(envs_dir.iterdir()):
+                    envs_dir.rmdir()
+                # Restore original .claude
+                shutil.move(str(backup_dir), str(claude_dir))
+            raise InitializationError(f"Initialization failed: {e}. Configuration restored from backup.")
+
+    finally:
+        # Release lock and clean up
+        if lock_file:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+                lock_file.close()
+                lock_file_path.unlink(missing_ok=True)
+            except Exception:
+                pass
 
 def create_environment(name: str, source: str = "default") -> None:
     """Create a new environment by copying from source environment or GitHub URL"""

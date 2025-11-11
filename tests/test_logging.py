@@ -1,7 +1,16 @@
 import logging
 from pathlib import Path
 import pytest
-from cenv.logging_config import setup_logging, get_logger
+import threading
+from cenv.logging_config import setup_logging, get_logger, reset_logging_config
+
+
+@pytest.fixture(autouse=True)
+def reset_logging():
+    """Reset logging configuration before each test"""
+    reset_logging_config()
+    yield
+    reset_logging_config()
 
 
 def test_setup_logging_creates_logger():
@@ -43,3 +52,58 @@ def test_logging_respects_level():
     assert not logger.isEnabledFor(logging.DEBUG)
     assert not logger.isEnabledFor(logging.INFO)
     assert logger.isEnabledFor(logging.WARNING)
+
+
+def test_setup_logging_is_thread_safe(tmp_path):
+    """Test that concurrent logging setup doesn't corrupt state"""
+    log_file = tmp_path / "test.log"
+    errors = []
+
+    def setup_concurrent():
+        try:
+            setup_logging(level=logging.INFO, log_file=log_file)
+            logger = get_logger("test")
+            logger.info("Test message")
+        except Exception as e:
+            errors.append(e)
+
+    # Launch multiple threads setting up logging
+    threads = [threading.Thread(target=setup_concurrent) for _ in range(10)]
+
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    # Should complete without errors
+    assert len(errors) == 0, f"Got errors: {errors}"
+
+    # Log file should exist and contain messages
+    assert log_file.exists()
+    content = log_file.read_text()
+    assert "Test message" in content
+
+
+def test_concurrent_logging_no_handler_duplication(tmp_path):
+    """Test that concurrent setup doesn't duplicate handlers"""
+    log_file = tmp_path / "test.log"
+
+    def setup_and_count():
+        setup_logging(level=logging.INFO, log_file=log_file)
+        logger = logging.getLogger("cenv")
+        return len(logger.handlers)
+
+    # Setup multiple times concurrently
+    threads = [threading.Thread(target=setup_and_count) for _ in range(5)]
+
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    # Check final handler count
+    logger = logging.getLogger("cenv")
+    # Should have exactly 2 handlers (console + file)
+    assert len(logger.handlers) == 2, f"Expected 2 handlers, got {len(logger.handlers)}"

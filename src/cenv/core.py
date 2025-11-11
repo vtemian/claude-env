@@ -19,6 +19,7 @@ from cenv.exceptions import (
     ProtectedEnvironmentError,
 )
 from cenv.platform_utils import check_platform_compatibility, PlatformNotSupportedError
+from cenv.validation import validate_environment_name, InvalidEnvironmentNameError
 
 logger = get_logger(__name__)
 
@@ -235,6 +236,9 @@ def init_environments() -> None:
 
 def create_environment(name: str, source: str = "default") -> None:
     """Create a new environment by copying from source environment or GitHub URL"""
+    # Validate environment name for security
+    validate_environment_name(name)
+
     logger.info(f"Creating environment '{name}' from '{source}'")
     envs_dir = get_envs_dir()
 
@@ -272,6 +276,9 @@ def create_environment(name: str, source: str = "default") -> None:
 
 def switch_environment(name: str, force: bool = False) -> None:
     """Switch to a different environment"""
+    # Validate environment name
+    validate_environment_name(name)
+
     logger.info(f"Switching to environment '{name}' (force={force})")
     target_env = get_env_path(name)
 
@@ -302,6 +309,9 @@ def switch_environment(name: str, force: bool = False) -> None:
 
 def delete_environment(name: str) -> None:
     """Delete an environment (moves to trash)"""
+    # Validate environment name
+    validate_environment_name(name)
+
     logger.info(f"Deleting environment '{name}'")
     target_env = get_env_path(name)
 

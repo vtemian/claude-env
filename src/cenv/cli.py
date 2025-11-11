@@ -16,6 +16,7 @@ from cenv.core import (
 from cenv.process import is_claude_running
 from cenv.logging_config import setup_logging
 from cenv.exceptions import CenvError
+from cenv.validation import InvalidEnvironmentNameError
 
 
 @click.group()

@@ -29,6 +29,73 @@ def get_claude_dir() -> Path:
     """Get the ~/.claude directory path"""
     return Path.home() / ".claude"
 
+def get_trash_dir() -> Path:
+    """Get the trash directory for deleted environments"""
+    return get_envs_dir() / ".trash"
+
+def list_trash() -> List[dict]:
+    """List backups in trash
+
+    Returns:
+        List of dicts with 'name', 'backup_name', 'timestamp' keys
+    """
+    trash_dir = get_trash_dir()
+
+    if not trash_dir.exists():
+        return []
+
+    backups = []
+    for item in trash_dir.iterdir():
+        if item.is_dir():
+            # Parse name: <env-name>-YYYYMMDD-HHMMSS
+            parts = item.name.rsplit("-", 2)
+            if len(parts) == 3:
+                name = parts[0]
+                timestamp = f"{parts[1]}-{parts[2]}"
+                backups.append({
+                    "name": name,
+                    "backup_name": item.name,
+                    "timestamp": timestamp,
+                })
+
+    return sorted(backups, key=lambda x: x["timestamp"], reverse=True)
+
+def restore_from_trash(backup_name: str) -> str:
+    """Restore an environment from trash
+
+    Args:
+        backup_name: Full backup directory name (e.g., 'myenv-20251111-143022')
+
+    Returns:
+        Name of restored environment
+
+    Raises:
+        EnvironmentNotFoundError: If backup doesn't exist
+        EnvironmentExistsError: If environment already exists
+    """
+    trash_dir = get_trash_dir()
+    backup_path = trash_dir / backup_name
+
+    if not backup_path.exists():
+        raise EnvironmentNotFoundError(backup_name)
+
+    # Extract original name
+    parts = backup_name.rsplit("-", 2)
+    if len(parts) != 3:
+        raise ValueError(f"Invalid backup name format: {backup_name}")
+
+    name = parts[0]
+    target_path = get_env_path(name)
+
+    if target_path.exists():
+        raise EnvironmentExistsError(name)
+
+    logger.info(f"Restoring '{name}' from trash backup '{backup_name}'")
+    shutil.move(str(backup_path), str(target_path))
+    logger.info(f"Environment '{name}' restored")
+
+    return name
+
 def list_environments() -> List[str]:
     """List all available environments"""
     envs_dir = get_envs_dir()
@@ -39,7 +106,7 @@ def list_environments() -> List[str]:
     return [
         item.name
         for item in envs_dir.iterdir()
-        if item.is_dir()
+        if item.is_dir() and item.name != ".trash"
     ]
 
 def get_current_environment() -> Optional[str]:
@@ -197,7 +264,7 @@ def switch_environment(name: str, force: bool = False) -> None:
     logger.info(f"Switched to environment '{name}'")
 
 def delete_environment(name: str) -> None:
-    """Delete an environment"""
+    """Delete an environment (moves to trash)"""
     logger.info(f"Deleting environment '{name}'")
     target_env = get_env_path(name)
 
@@ -220,7 +287,17 @@ def delete_environment(name: str) -> None:
         logger.error("Cannot delete default environment")
         raise RuntimeError("Cannot delete default environment.")
 
-    # Delete the environment
-    logger.debug(f"Removing directory {target_env}")
-    shutil.rmtree(target_env)
-    logger.info(f"Environment '{name}' deleted")
+    # Create trash directory if it doesn't exist
+    trash_dir = get_trash_dir()
+    trash_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create timestamped backup name
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    backup_name = f"{name}-{timestamp}"
+    backup_path = trash_dir / backup_name
+
+    # Move to trash instead of deleting
+    logger.info(f"Moving '{name}' to trash as '{backup_name}'")
+    shutil.move(str(target_env), str(backup_path))
+    logger.info(f"Environment '{name}' moved to trash (backup: {backup_name})")

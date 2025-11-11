@@ -1,5 +1,5 @@
 # ABOUTME: CLI interface for cenv using Click framework
-# ABOUTME: Provides commands for init, create, use, list, current, and delete
+# ABOUTME: Provides commands for init, create, use, list, current, delete, trash, and restore
 import click
 import logging
 from pathlib import Path
@@ -10,6 +10,8 @@ from cenv.core import (
     delete_environment,
     list_environments,
     get_current_environment,
+    list_trash,
+    restore_from_trash,
 )
 from cenv.process import is_claude_running
 from cenv.logging_config import setup_logging
@@ -120,7 +122,7 @@ def current():
 @click.argument("name")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
 def delete(name: str, force: bool):
-    """Delete an environment"""
+    """Delete an environment (moves to trash)"""
     try:
         if not force:
             if not click.confirm(f"Delete environment '{name}'?"):
@@ -128,7 +130,36 @@ def delete(name: str, force: bool):
                 return
 
         delete_environment(name)
-        click.echo(f"✓ Deleted environment '{name}'")
+        click.echo(f"✓ Deleted environment '{name}' (moved to trash)")
+        click.echo("  Use 'cenv trash' to list deleted environments")
+        click.echo("  Use 'cenv restore <backup-name>' to restore")
+    except CenvError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+@cli.command()
+def trash():
+    """List deleted environments in trash"""
+    backups = list_trash()
+
+    if not backups:
+        click.echo("Trash is empty.")
+        return
+
+    click.echo("Deleted environments (newest first):")
+    for backup in backups:
+        click.echo(f"  {backup['backup_name']}")
+        click.echo(f"    Environment: {backup['name']}")
+        click.echo(f"    Deleted: {backup['timestamp']}")
+        click.echo()
+
+@cli.command()
+@click.argument("backup_name")
+def restore(backup_name: str):
+    """Restore an environment from trash"""
+    try:
+        name = restore_from_trash(backup_name)
+        click.echo(f"✓ Restored environment '{name}' from trash")
     except CenvError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)

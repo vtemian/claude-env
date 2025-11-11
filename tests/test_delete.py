@@ -1,7 +1,15 @@
 # ABOUTME: Tests for environment deletion functionality
 # ABOUTME: Verifies deletion safety checks and directory removal
 import pytest
-from cenv.core import delete_environment
+from pathlib import Path
+from cenv.core import (
+    delete_environment,
+    get_trash_dir,
+    restore_from_trash,
+    list_trash,
+    init_environments,
+    create_environment,
+)
 from cenv.exceptions import EnvironmentNotFoundError
 from unittest.mock import patch
 
@@ -47,3 +55,70 @@ def test_delete_environment_raises_if_default(multi_env_setup):
     with patch("cenv.core.get_current_environment", return_value="work"):
         with pytest.raises(RuntimeError, match="Cannot delete default"):
             delete_environment("default")
+
+def test_get_trash_dir_returns_correct_path():
+    """Test that trash directory is ~/.claude-envs/.trash"""
+    result = get_trash_dir()
+    assert result == Path.home() / ".claude-envs" / ".trash"
+
+def test_delete_creates_backup_in_trash(tmp_path, monkeypatch):
+    """Test that delete creates timestamped backup in trash"""
+    # Setup
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
+    init_environments()
+    create_environment("test-env")
+
+    # Delete should create backup
+    delete_environment("test-env")
+
+    trash_dir = get_trash_dir()
+    assert trash_dir.exists()
+
+    # Should have one backup with timestamp
+    backups = list(trash_dir.iterdir())
+    assert len(backups) == 1
+    assert backups[0].name.startswith("test-env-")
+
+def test_list_trash_returns_backups(tmp_path, monkeypatch):
+    """Test listing trash backups"""
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
+    init_environments()
+    create_environment("test-env")
+    delete_environment("test-env")
+
+    backups = list_trash()
+    assert len(backups) == 1
+    assert backups[0]["name"] == "test-env"
+    assert "timestamp" in backups[0]
+
+def test_restore_from_trash(tmp_path, monkeypatch):
+    """Test restoring environment from trash"""
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
+    init_environments()
+    create_environment("test-env")
+
+    # Create a marker file
+    test_file = tmp_path / ".claude-envs" / "test-env" / "marker.txt"
+    test_file.write_text("test content")
+
+    delete_environment("test-env")
+
+    # Environment should be gone
+    env_path = tmp_path / ".claude-envs" / "test-env"
+    assert not env_path.exists()
+
+    # Get backup name
+    backups = list_trash()
+    backup_name = backups[0]["backup_name"]
+
+    # Restore
+    restore_from_trash(backup_name)
+
+    # Should be restored
+    assert env_path.exists()
+    restored_file = env_path / "marker.txt"
+    assert restored_file.exists()
+    assert restored_file.read_text() == "test content"

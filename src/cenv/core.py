@@ -4,6 +4,7 @@
 from pathlib import Path
 from typing import List, Optional
 import shutil
+import threading
 from cenv.process import is_claude_running
 from cenv.github import clone_from_github, is_valid_github_url
 from cenv.logging_config import get_logger
@@ -22,6 +23,9 @@ from cenv.platform_utils import check_platform_compatibility, PlatformNotSupport
 from cenv.validation import validate_environment_name, InvalidEnvironmentNameError
 
 logger = get_logger(__name__)
+
+# Global lock for switch operations to ensure atomicity
+_switch_lock = threading.Lock()
 
 def get_envs_dir() -> Path:
     """Get the base directory for all environments"""
@@ -275,7 +279,11 @@ def create_environment(name: str, source: str = "default") -> None:
     logger.info(f"Environment '{name}' created successfully")
 
 def switch_environment(name: str, force: bool = False) -> None:
-    """Switch to a different environment"""
+    """Switch to a different environment using atomic rename
+
+    This operation is thread-safe and atomic - no intermediate broken state
+    will be visible to concurrent readers.
+    """
     # Validate environment name
     validate_environment_name(name)
 
@@ -292,20 +300,41 @@ def switch_environment(name: str, force: bool = False) -> None:
         logger.warning("Claude is running, refusing to switch without force=True")
         raise ClaudeRunningError()
 
-    claude_dir = get_claude_dir()
+    # Use lock to prevent concurrent switches from interfering
+    with _switch_lock:
+        claude_dir = get_claude_dir()
 
-    # Remove existing symlink
-    if claude_dir.is_symlink():
-        logger.debug(f"Removing existing symlink at {claude_dir}")
-        claude_dir.unlink()
-    elif claude_dir.exists():
-        logger.error(f"{claude_dir} exists but is not a symlink")
-        raise SymlinkStateError("~/.claude exists but is not a symlink. Cannot switch.")
+        # Verify current state is valid or missing
+        if claude_dir.exists() and not claude_dir.is_symlink():
+            logger.error(f"{claude_dir} exists but is not a symlink")
+            raise SymlinkStateError("~/.claude exists but is not a symlink. Cannot switch.")
 
-    # Create new symlink
-    logger.debug(f"Creating symlink {claude_dir} -> {target_env}")
-    claude_dir.symlink_to(target_env)
-    logger.info(f"Switched to environment '{name}'")
+        # Create temporary symlink with atomic rename
+        # This ensures no intermediate broken state
+        temp_link = claude_dir.parent / ".claude.tmp"
+
+        try:
+            # Remove temp link if it exists from previous failed operation
+            if temp_link.exists():
+                temp_link.unlink()
+
+            # Create new symlink with temporary name
+            logger.debug(f"Creating temporary symlink {temp_link} -> {target_env}")
+            temp_link.symlink_to(target_env)
+
+            # Atomic rename: this is the critical operation
+            # On Unix, this is atomic - either old or new link exists, never neither
+            logger.debug(f"Atomically replacing {claude_dir} with temporary symlink")
+            temp_link.replace(claude_dir)
+
+            logger.info(f"Switched to environment '{name}'")
+
+        except Exception as e:
+            # Clean up temporary symlink on error
+            if temp_link.exists():
+                logger.debug(f"Cleaning up temporary symlink after error")
+                temp_link.unlink()
+            raise
 
 def delete_environment(name: str) -> None:
     """Delete an environment (moves to trash)"""

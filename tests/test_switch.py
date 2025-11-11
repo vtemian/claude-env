@@ -1,8 +1,9 @@
 # ABOUTME: Tests for environment switching functionality
 # ABOUTME: Verifies symlink management, process detection, and safety checks
 import pytest
+import threading
 from pathlib import Path
-from cenv.core import switch_environment
+from cenv.core import switch_environment, init_environments, create_environment
 from cenv.exceptions import EnvironmentNotFoundError, ClaudeRunningError
 from unittest.mock import patch
 
@@ -59,3 +60,84 @@ def test_switch_environment_removes_existing_symlink(multi_env_setup):
 
         switch_environment("personal", force=True)
         assert multi_env_setup["claude"].resolve() == multi_env_setup["envs"] / "personal"
+
+
+def test_switch_is_atomic(tmp_path, monkeypatch):
+    """Test that switch operation is atomic - no intermediate broken state"""
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
+    # Setup
+    init_environments()
+    create_environment("test-env")
+
+    # Track symlink state at every moment
+    states = []
+
+    def monitor_symlink():
+        """Monitor thread that checks symlink state"""
+        claude_dir = tmp_path / ".claude"
+        for _ in range(100):
+            if claude_dir.exists():
+                if claude_dir.is_symlink():
+                    target = claude_dir.resolve()
+                    states.append(("valid", target.name))
+                else:
+                    states.append(("broken", "not-symlink"))
+            else:
+                states.append(("broken", "missing"))
+            # Small sleep to catch any intermediate state
+            import time
+            time.sleep(0.001)
+
+    # Start monitoring in background
+    monitor = threading.Thread(target=monitor_symlink, daemon=True)
+    monitor.start()
+
+    # Perform switch
+    with patch("cenv.core.is_claude_running", return_value=False):
+        switch_environment("test-env")
+
+    monitor.join(timeout=2)
+
+    # Verify: ALL states should be valid (no broken intermediate state)
+    broken_states = [s for s in states if s[0] == "broken"]
+    assert len(broken_states) == 0, f"Found broken intermediate states: {broken_states}"
+
+
+def test_switch_handles_concurrent_operations(tmp_path, monkeypatch):
+    """Test that concurrent switches don't corrupt state"""
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
+    # Setup multiple environments
+    init_environments()
+    for i in range(3):
+        create_environment(f"env{i}")
+
+    errors = []
+
+    def switch_env(name):
+        try:
+            with patch("cenv.core.is_claude_running", return_value=False):
+                switch_environment(name, force=True)
+        except Exception as e:
+            errors.append(e)
+
+    # Launch concurrent switches
+    threads = [
+        threading.Thread(target=switch_env, args=(f"env{i}",))
+        for i in range(3)
+    ]
+
+    for t in threads:
+        t.start()
+
+    for t in threads:
+        t.join()
+
+    # Should complete without errors
+    assert len(errors) == 0, f"Got errors: {errors}"
+
+    # Final state should be valid
+    claude_dir = tmp_path / ".claude"
+    assert claude_dir.is_symlink()
+    assert claude_dir.resolve().exists()

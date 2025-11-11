@@ -45,3 +45,8 @@ class GitOperationError(CenvError):
         super().__init__(
             f"Git {operation} failed for {url}: {reason}"
         )
+
+
+class PlatformNotSupportedError(CenvError):
+    """Raised when cenv is run on an unsupported platform"""
+    pass

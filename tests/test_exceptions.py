@@ -6,6 +6,7 @@ from cenv.exceptions import (
     ClaudeRunningError,
     InitializationError,
     GitOperationError,
+    PlatformNotSupportedError,
 )
 
 
@@ -50,4 +51,11 @@ def test_git_operation_error():
     err = GitOperationError("clone", "https://github.com/user/repo", "timeout")
     assert "clone" in str(err)
     assert "timeout" in str(err)
+    assert isinstance(err, CenvError)
+
+
+def test_platform_not_supported_error():
+    """Test PlatformNotSupportedError inherits from CenvError"""
+    err = PlatformNotSupportedError("Platform not supported")
+    assert "Platform not supported" in str(err)
     assert isinstance(err, CenvError)

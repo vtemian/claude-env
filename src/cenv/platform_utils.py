@@ -2,11 +2,7 @@
 # ABOUTME: Ensures cenv runs only on supported platforms
 """Platform compatibility utilities for cenv"""
 import platform
-
-
-class PlatformNotSupportedError(Exception):
-    """Raised when cenv is run on an unsupported platform"""
-    pass
+from cenv.exceptions import PlatformNotSupportedError
 
 
 def check_platform_compatibility() -> None:

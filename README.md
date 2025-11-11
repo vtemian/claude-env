@@ -149,6 +149,42 @@ cenv delete experiment
 cenv create work --from-repo https://github.com/company/claude-work-template
 ```
 
+## Security
+
+- Git clone operations use shallow clones (`--depth 1`) and have a 5-minute timeout
+- All operations use custom exception types for better error handling
+- Comprehensive logging available with `--verbose` flag
+- See [SECURITY.md](docs/SECURITY.md) for security considerations
+
+## Logging
+
+Enable verbose logging:
+
+```bash
+cenv --verbose list
+```
+
+Write logs to file:
+
+```bash
+cenv --log-file ~/cenv.log list
+```
+
+## Trash and Recovery
+
+Deleted environments are moved to trash instead of permanently deleted:
+
+```bash
+# Delete an environment (moves to trash)
+cenv delete myenv
+
+# List deleted environments
+cenv trash
+
+# Restore from trash
+cenv restore myenv-20251111-143022
+```
+
 ## Development
 
 ```bash
@@ -157,6 +193,9 @@ make install
 
 # Run tests
 make test
+
+# Run type checking
+make typecheck
 
 # Clean build artifacts
 make clean

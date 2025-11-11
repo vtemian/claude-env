@@ -5,7 +5,13 @@ Manage isolated Claude Code configurations like pyenv manages Python versions. S
 ## Installation
 
 ```bash
-# Using uv (recommended)
+# Using uvx (no installation required, runs on-demand from local directory)
+uvx --from . cenv --help
+
+# Once published to PyPI, you'll be able to run directly:
+# uvx cenv --help
+
+# Or install locally with uv (recommended for regular use)
 git clone https://github.com/yourusername/cenv.git
 cd cenv
 uv pip install -e .

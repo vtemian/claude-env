@@ -14,6 +14,7 @@ from cenv.exceptions import (
     InitializationError,
     GitOperationError,
 )
+from cenv.platform_utils import check_platform_compatibility, PlatformNotSupportedError
 
 logger = get_logger(__name__)
 
@@ -130,6 +131,9 @@ def environment_exists(name: str) -> bool:
 
 def init_environments() -> None:
     """Initialize cenv by migrating ~/.claude to ~/.claude-envs/default/"""
+    # Check platform compatibility before attempting initialization
+    check_platform_compatibility()
+
     import fcntl
     import tempfile
 

@@ -16,6 +16,7 @@ from cenv.core import (
 from cenv.process import is_claude_running
 from cenv.logging_config import setup_logging
 from cenv.exceptions import CenvError
+from cenv.platform_utils import PlatformNotSupportedError
 
 
 @click.group()
@@ -46,6 +47,9 @@ def init() -> None:
         click.echo("✓ Initialized cenv successfully!")
         click.echo("  ~/.claude → ~/.claude-envs/default/")
         click.echo("\nUse 'cenv create <name>' to create new environments.")
+    except PlatformNotSupportedError as e:
+        click.echo(f"Platform Error: {e}", err=True)
+        raise SystemExit(1)
     except CenvError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)

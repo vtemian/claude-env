@@ -13,6 +13,7 @@ from cenv.core import (
 )
 from cenv.process import is_claude_running
 from cenv.logging_config import setup_logging
+from cenv.exceptions import CenvError
 
 
 @click.group()
@@ -43,7 +44,7 @@ def init():
         click.echo("✓ Initialized cenv successfully!")
         click.echo("  ~/.claude → ~/.claude-envs/default/")
         click.echo("\nUse 'cenv create <name>' to create new environments.")
-    except RuntimeError as e:
+    except CenvError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)
 
@@ -64,7 +65,7 @@ def create(name: str, from_repo: str):
             click.echo(f"✓ Created environment '{name}' from {from_repo}")
         else:
             click.echo(f"✓ Created environment '{name}' from default")
-    except (RuntimeError, ValueError) as e:
+    except CenvError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)
 
@@ -84,7 +85,7 @@ def use(name: str, force: bool):
 
         switch_environment(name, force=force)
         click.echo(f"✓ Switched to environment '{name}'")
-    except RuntimeError as e:
+    except CenvError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)
 
@@ -128,6 +129,6 @@ def delete(name: str, force: bool):
 
         delete_environment(name)
         click.echo(f"✓ Deleted environment '{name}'")
-    except RuntimeError as e:
+    except CenvError as e:
         click.echo(f"Error: {e}", err=True)
         raise SystemExit(1)

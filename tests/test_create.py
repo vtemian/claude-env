@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from cenv.core import create_environment
+from cenv.exceptions import EnvironmentExistsError, InitializationError, EnvironmentNotFoundError
 from unittest.mock import patch
 
 @pytest.fixture
@@ -39,14 +40,14 @@ def test_create_environment_raises_if_exists(initialized_envs):
     """Test that creating existing environment raises error"""
     create_environment("work")
 
-    with pytest.raises(RuntimeError, match="already exists"):
+    with pytest.raises(EnvironmentExistsError, match="already exists"):
         create_environment("work")
 
 def test_create_environment_raises_if_not_initialized(monkeypatch, tmp_path):
     """Test that create raises if not initialized"""
     monkeypatch.setattr("cenv.core.get_envs_dir", lambda: tmp_path / ".claude-envs")
 
-    with pytest.raises(RuntimeError, match="not initialized"):
+    with pytest.raises(InitializationError, match="not initialized"):
         create_environment("work")
 
 def test_create_environment_raises_if_default_missing(initialized_envs):
@@ -54,7 +55,7 @@ def test_create_environment_raises_if_default_missing(initialized_envs):
     import shutil
     shutil.rmtree(initialized_envs["envs"] / "default")
 
-    with pytest.raises(RuntimeError, match="default environment not found"):
+    with pytest.raises(EnvironmentNotFoundError, match="default"):
         create_environment("work")
 
 def test_create_environment_from_github_url(initialized_envs):

@@ -3,6 +3,7 @@
 import pytest
 from click.testing import CliRunner
 from cenv.cli import cli
+from cenv.exceptions import EnvironmentNotFoundError
 from unittest.mock import patch
 
 def test_use_command_switches_environment():
@@ -61,7 +62,7 @@ def test_use_command_shows_error_if_env_not_exists():
     runner = CliRunner()
 
     with patch("cenv.cli.is_claude_running", return_value=False):
-        with patch("cenv.cli.switch_environment", side_effect=RuntimeError("does not exist")):
+        with patch("cenv.cli.switch_environment", side_effect=EnvironmentNotFoundError("nonexistent")):
             result = runner.invoke(cli, ["use", "nonexistent"])
 
             assert result.exit_code == 1

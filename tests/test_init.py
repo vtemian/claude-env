@@ -1,6 +1,7 @@
 import pytest
 from pathlib import Path
 from cenv.core import init_environments
+from cenv.exceptions import InitializationError
 from unittest.mock import patch
 import shutil
 
@@ -46,7 +47,7 @@ def test_init_raises_if_already_initialized(mock_dirs):
     init_environments()
 
     # After successful init, ~/.claude is a symlink, so that error takes precedence
-    with pytest.raises(RuntimeError, match="already a symlink"):
+    with pytest.raises(InitializationError, match="already a symlink"):
         init_environments()
 
 def test_init_raises_if_claude_is_already_symlink(mock_dirs):
@@ -54,7 +55,7 @@ def test_init_raises_if_claude_is_already_symlink(mock_dirs):
     shutil.rmtree(mock_dirs["claude"])
     mock_dirs["claude"].symlink_to(mock_dirs["envs"] / "existing")
 
-    with pytest.raises(RuntimeError, match="already a symlink"):
+    with pytest.raises(InitializationError, match="already a symlink"):
         init_environments()
 
 def test_init_restores_backup_on_failure(mock_dirs):
@@ -63,7 +64,7 @@ def test_init_restores_backup_on_failure(mock_dirs):
 
     # Mock symlink_to to fail
     with patch("pathlib.Path.symlink_to", side_effect=OSError("Simulated failure")):
-        with pytest.raises(RuntimeError, match="Initialization failed"):
+        with pytest.raises(InitializationError, match="Initialization failed"):
             init_environments()
 
     # Verify ~/.claude was restored

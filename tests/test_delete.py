@@ -2,6 +2,7 @@
 # ABOUTME: Verifies deletion safety checks and directory removal
 import pytest
 from cenv.core import delete_environment
+from cenv.exceptions import EnvironmentNotFoundError
 from unittest.mock import patch
 
 @pytest.fixture
@@ -33,7 +34,7 @@ def test_delete_environment_removes_directory(multi_env_setup):
 
 def test_delete_environment_raises_if_not_exists(multi_env_setup):
     """Test that deleting non-existent env raises error"""
-    with pytest.raises(RuntimeError, match="does not exist"):
+    with pytest.raises(EnvironmentNotFoundError, match="does not exist"):
         delete_environment("nonexistent")
 
 def test_delete_environment_raises_if_currently_active(multi_env_setup):

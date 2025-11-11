@@ -3,6 +3,7 @@
 import pytest
 from click.testing import CliRunner
 from cenv.cli import cli
+from cenv.exceptions import EnvironmentNotFoundError
 from unittest.mock import patch
 
 def test_list_command_shows_all_environments():
@@ -88,7 +89,7 @@ def test_delete_command_shows_error_if_not_exists():
     """Test that delete shows error if environment doesn't exist"""
     runner = CliRunner()
 
-    with patch("cenv.cli.delete_environment", side_effect=RuntimeError("does not exist")):
+    with patch("cenv.cli.delete_environment", side_effect=EnvironmentNotFoundError("nonexistent")):
         result = runner.invoke(cli, ["delete", "nonexistent"], input="y\n")
 
         assert result.exit_code == 1

@@ -3,6 +3,7 @@
 import pytest
 from click.testing import CliRunner
 from cenv.cli import cli
+from cenv.exceptions import InitializationError
 from unittest.mock import patch
 
 def test_init_command_calls_init_environments():
@@ -20,7 +21,7 @@ def test_init_command_shows_error_if_already_initialized():
     """Test that init shows error if already initialized"""
     runner = CliRunner()
 
-    with patch("cenv.cli.init_environments", side_effect=RuntimeError("already initialized")):
+    with patch("cenv.cli.init_environments", side_effect=InitializationError("already initialized")):
         result = runner.invoke(cli, ["init"])
 
         assert result.exit_code == 1

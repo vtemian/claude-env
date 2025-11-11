@@ -3,6 +3,7 @@
 import pytest
 from click.testing import CliRunner
 from cenv.cli import cli
+from cenv.exceptions import EnvironmentExistsError
 from unittest.mock import patch
 
 def test_create_command_creates_from_default():
@@ -30,7 +31,7 @@ def test_create_command_shows_error_if_exists():
     """Test that create shows error if environment exists"""
     runner = CliRunner()
 
-    with patch("cenv.cli.create_environment", side_effect=RuntimeError("already exists")):
+    with patch("cenv.cli.create_environment", side_effect=EnvironmentExistsError("work")):
         result = runner.invoke(cli, ["create", "work"])
 
         assert result.exit_code == 1

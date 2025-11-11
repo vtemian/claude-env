@@ -3,6 +3,7 @@
 import pytest
 from pathlib import Path
 from cenv.core import switch_environment
+from cenv.exceptions import EnvironmentNotFoundError, ClaudeRunningError
 from unittest.mock import patch
 
 @pytest.fixture
@@ -34,13 +35,13 @@ def test_switch_environment_updates_symlink(multi_env_setup):
 def test_switch_environment_raises_if_not_exists(multi_env_setup):
     """Test that switching to non-existent env raises error"""
     with patch("cenv.core.is_claude_running", return_value=False):
-        with pytest.raises(RuntimeError, match="does not exist"):
+        with pytest.raises(EnvironmentNotFoundError, match="does not exist"):
             switch_environment("nonexistent", force=True)
 
 def test_switch_environment_raises_if_claude_running_without_force(multi_env_setup):
     """Test that switching raises if Claude running and force=False"""
     with patch("cenv.core.is_claude_running", return_value=True):
-        with pytest.raises(RuntimeError, match="Claude is running"):
+        with pytest.raises(ClaudeRunningError, match="Claude"):
             switch_environment("work", force=False)
 
 def test_switch_environment_succeeds_if_claude_running_with_force(multi_env_setup):

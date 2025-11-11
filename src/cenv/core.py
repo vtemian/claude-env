@@ -7,6 +7,12 @@ import shutil
 from cenv.process import is_claude_running
 from cenv.github import clone_from_github, is_valid_github_url
 from cenv.logging_config import get_logger
+from cenv.exceptions import (
+    EnvironmentNotFoundError,
+    EnvironmentExistsError,
+    ClaudeRunningError,
+    InitializationError,
+)
 
 logger = get_logger(__name__)
 
@@ -64,12 +70,12 @@ def init_environments() -> None:
     # Check if ~/.claude is already a symlink
     if claude_dir.is_symlink():
         logger.error("~/.claude is already a symlink")
-        raise RuntimeError("~/.claude is already a symlink. Cannot initialize.")
+        raise InitializationError("~/.claude is already a symlink. Cannot initialize.")
 
     # Check if already initialized
     if envs_dir.exists():
         logger.error("cenv already initialized")
-        raise RuntimeError("cenv already initialized. ~/.claude-envs exists.")
+        raise InitializationError("cenv already initialized. ~/.claude-envs exists.")
 
     # Create backup if claude_dir exists
     backup_dir = None
@@ -120,7 +126,7 @@ def init_environments() -> None:
                 envs_dir.rmdir()
             # Restore original .claude
             shutil.move(str(backup_dir), str(claude_dir))
-        raise RuntimeError(f"Initialization failed: {e}. Configuration restored from backup.")
+        raise InitializationError(f"Initialization failed: {e}. Configuration restored from backup.")
 
 def create_environment(name: str, source: str = "default") -> None:
     """Create a new environment by copying from source environment or GitHub URL"""
@@ -130,13 +136,13 @@ def create_environment(name: str, source: str = "default") -> None:
     # Check if initialized
     if not envs_dir.exists():
         logger.error("cenv not initialized")
-        raise RuntimeError("cenv not initialized. Run 'cenv init' first.")
+        raise InitializationError("cenv not initialized. Run 'cenv init' first.")
 
     # Check if environment already exists
     target_env = get_env_path(name)
     if target_env.exists():
         logger.error(f"Environment '{name}' already exists")
-        raise RuntimeError(f"Environment '{name}' already exists.")
+        raise EnvironmentExistsError(name)
 
     # Check if source is a GitHub URL
     if source.startswith("https://") or source.startswith("git@"):
@@ -151,7 +157,7 @@ def create_environment(name: str, source: str = "default") -> None:
         source_env = get_env_path(source)
         if not source_env.exists():
             logger.error(f"Source environment '{source}' not found")
-            raise RuntimeError(f"{source} environment not found.")
+            raise EnvironmentNotFoundError(source)
 
         # Copy source to target
         logger.debug(f"Copying {source_env} to {target_env}")
@@ -167,14 +173,12 @@ def switch_environment(name: str, force: bool = False) -> None:
     # Check if target environment exists
     if not target_env.exists():
         logger.error(f"Environment '{name}' does not exist")
-        raise RuntimeError(f"Environment '{name}' does not exist.")
+        raise EnvironmentNotFoundError(name)
 
     # Check if Claude is running
     if is_claude_running() and not force:
         logger.warning("Claude is running, refusing to switch without force=True")
-        raise RuntimeError(
-            "Claude is running. Please exit Claude first or use force=True."
-        )
+        raise ClaudeRunningError()
 
     claude_dir = get_claude_dir()
 
@@ -199,7 +203,7 @@ def delete_environment(name: str) -> None:
     # Check if environment exists
     if not target_env.exists():
         logger.error(f"Environment '{name}' does not exist")
-        raise RuntimeError(f"Environment '{name}' does not exist.")
+        raise EnvironmentNotFoundError(name)
 
     # Check if it's currently active
     current = get_current_environment()

@@ -20,7 +20,6 @@ The detection prioritizes false negatives over false positives:
   • If uncertain, assumes Claude is NOT running (allows operation)
   • Better to allow operation than unnecessarily block user
 """
-from typing import List
 
 import psutil
 

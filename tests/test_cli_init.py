@@ -2,7 +2,6 @@
 # ABOUTME: Verifies init command calls core init_environments and handles errors
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from cenv.cli import cli

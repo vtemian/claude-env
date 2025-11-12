@@ -1,6 +1,5 @@
 import os
 import threading
-from pathlib import Path
 
 import pytest
 
@@ -13,8 +12,6 @@ from cenv.core import (
 )
 from cenv.exceptions import (
     EnvironmentExistsError,
-    EnvironmentNotFoundError,
-    InitializationError,
 )
 from cenv.validation import InvalidEnvironmentNameError
 

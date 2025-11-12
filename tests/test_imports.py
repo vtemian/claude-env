@@ -1,5 +1,4 @@
 """Test that all public exceptions are importable and usable."""
-import pytest
 
 
 def test_exception_imports_from_cenv():

@@ -23,7 +23,7 @@ def test_get_claude_dir_returns_correct_path():
 def test_switch_environment_logs_error_on_failure(tmp_path, caplog, monkeypatch):
     """Test that switch_environment logs detailed error when cleanup is needed."""
     import logging
-    from unittest.mock import MagicMock, patch
+    from unittest.mock import patch
 
     envs_dir = tmp_path / ".claude-envs"
     envs_dir.mkdir()
@@ -44,7 +44,6 @@ def test_switch_environment_logs_error_on_failure(tmp_path, caplog, monkeypatch)
     monkeypatch.setattr("cenv.core.get_claude_dir", lambda: claude_dir)
 
     # Mock Path.replace to raise error after symlink is created
-    original_path = Path
 
     def failing_replace(self, target):
         # Simulate failure during atomic replace

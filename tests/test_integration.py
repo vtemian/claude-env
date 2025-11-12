@@ -1,7 +1,5 @@
 # ABOUTME: Integration tests for full cenv workflow
 # ABOUTME: Tests complete user journeys from init through delete
-import tempfile
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

@@ -1,5 +1,4 @@
 """Tests for LICENSE file."""
-import os
 from pathlib import Path
 
 

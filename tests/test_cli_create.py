@@ -2,7 +2,6 @@
 # ABOUTME: Verifies create command handles both default and GitHub repo sources
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from cenv.cli import cli

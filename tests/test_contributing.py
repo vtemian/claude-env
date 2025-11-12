@@ -1,5 +1,4 @@
 """Tests for CONTRIBUTING.md file."""
-import os
 from pathlib import Path
 
 

@@ -2,8 +2,6 @@
 # ABOUTME: Verifies is_claude_running() and get_claude_processes() work correctly
 from unittest.mock import Mock, patch
 
-import pytest
-
 from cenv.process import get_claude_processes, is_claude_running
 
 

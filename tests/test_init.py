@@ -1,5 +1,4 @@
 import shutil
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -84,7 +83,6 @@ def test_init_restores_backup_on_failure(mock_dirs):
 def test_concurrent_init_only_one_succeeds(tmp_path, monkeypatch):
     """Test that concurrent initialization is safe"""
     import threading
-    import time
 
     monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
 

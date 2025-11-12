@@ -1,6 +1,5 @@
 # ABOUTME: Tests for GitHub repository cloning functionality
 # ABOUTME: Validates URL validation and git clone subprocess calls
-import shutil
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch

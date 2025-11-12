@@ -4,7 +4,6 @@
 import shutil
 import threading
 from pathlib import Path
-from typing import List, Optional
 
 from cenv.exceptions import (
     ActiveEnvironmentError,

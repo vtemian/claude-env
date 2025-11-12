@@ -2,7 +2,6 @@
 # ABOUTME: Verifies output formatting and confirmation prompts
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from cenv.cli import cli

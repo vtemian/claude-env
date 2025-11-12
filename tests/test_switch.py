@@ -1,7 +1,6 @@
 # ABOUTME: Tests for environment switching functionality
 # ABOUTME: Verifies symlink management, process detection, and safety checks
 import threading
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest

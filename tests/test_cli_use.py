@@ -2,7 +2,6 @@
 # ABOUTME: Tests environment switching via CLI with confirmation prompts and --force flag
 from unittest.mock import patch
 
-import pytest
 from click.testing import CliRunner
 
 from cenv.cli import cli

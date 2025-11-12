@@ -1,5 +1,5 @@
 [project]
-name = "cenv"
+name = "claude-env"
 version = "0.1.0"
 description = "Claude environment manager - switch between Claude Code configurations"
 readme = "README.md"

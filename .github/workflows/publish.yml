@@ -45,7 +45,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/cenv
+      url: https://pypi.org/p/claude-env
 
     steps:
     - name: Download distributions

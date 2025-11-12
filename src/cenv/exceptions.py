@@ -2,6 +2,20 @@
 # ABOUTME: Provides specific exception types for better error handling
 """Custom exceptions for cenv"""
 
+__all__ = [
+    'CenvError',
+    'EnvironmentNotFoundError',
+    'EnvironmentExistsError',
+    'ClaudeRunningError',
+    'InitializationError',
+    'GitOperationError',
+    'PlatformNotSupportedError',
+    'InvalidBackupFormatError',
+    'SymlinkStateError',
+    'ActiveEnvironmentError',
+    'ProtectedEnvironmentError',
+]
+
 
 class CenvError(Exception):
     """Base exception for all cenv errors"""

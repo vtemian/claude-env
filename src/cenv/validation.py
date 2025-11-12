@@ -4,6 +4,13 @@
 import re
 from cenv.exceptions import CenvError
 
+__all__ = [
+    'validate_environment_name',
+    'InvalidEnvironmentNameError',
+    'VALID_NAME_PATTERN',
+    'RESERVED_NAMES',
+]
+
 
 class InvalidEnvironmentNameError(CenvError):
     """Raised when environment name is invalid"""

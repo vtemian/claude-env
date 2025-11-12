@@ -4,6 +4,11 @@
 import platform
 from cenv.exceptions import PlatformNotSupportedError
 
+__all__ = [
+    'check_platform_compatibility',
+    'PlatformNotSupportedError',
+]
+
 
 def check_platform_compatibility() -> None:
     """Check if current platform is supported by cenv

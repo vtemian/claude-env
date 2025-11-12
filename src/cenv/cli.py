@@ -12,11 +12,51 @@ from cenv.core import (
     get_current_environment,
     list_trash,
     restore_from_trash,
+    DEFAULT_ENV_NAME,
 )
 from cenv.process import is_claude_running
 from cenv.logging_config import setup_logging
-from cenv.exceptions import CenvError
+from cenv.exceptions import CenvError, EnvironmentNotFoundError, InitializationError
 from cenv.validation import InvalidEnvironmentNameError
+
+__all__ = ['cli']
+
+
+def format_error_with_help(error: CenvError, context: str = "") -> str:
+    """Format error message with helpful suggestions
+
+    Args:
+        error: The exception that occurred
+        context: Additional context (e.g., 'use', 'create')
+
+    Returns:
+        Formatted error message with suggestions
+    """
+    message = f"Error: {error}\n"
+
+    # Add context-specific help
+    if isinstance(error, EnvironmentNotFoundError):
+        try:
+            envs = list_environments()
+            current = get_current_environment()
+
+            if envs:
+                message += "\nAvailable environments:\n"
+                for env in sorted(envs):
+                    marker = " → " if env == current else "   "
+                    message += f"{marker}{env}\n"
+            else:
+                message += "\nNo environments found. Run 'cenv init' to initialize.\n"
+
+            message += "\nRun 'cenv list' to see all environments.\n"
+        except:
+            message += "\nRun 'cenv list' to see available environments.\n"
+
+    elif isinstance(error, InitializationError):
+        if "not initialized" in str(error).lower():
+            message += "\nRun 'cenv init' to initialize cenv.\n"
+
+    return message.rstrip()
 
 
 @click.group()
@@ -48,7 +88,7 @@ def init() -> None:
         click.echo("  ~/.claude → ~/.claude-envs/default/")
         click.echo("\nUse 'cenv create <name>' to create new environments.")
     except CenvError as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(format_error_with_help(e, context='init'), err=True)
         raise SystemExit(1)
 
 @cli.command()
@@ -61,15 +101,15 @@ def init() -> None:
 def create(name: str, from_repo: str) -> None:
     """Create a new environment"""
     try:
-        source = from_repo if from_repo else "default"
+        source = from_repo if from_repo else DEFAULT_ENV_NAME
         create_environment(name, source=source)
 
         if from_repo:
             click.echo(f"✓ Created environment '{name}' from {from_repo}")
         else:
-            click.echo(f"✓ Created environment '{name}' from default")
+            click.echo(f"✓ Created environment '{name}' from {DEFAULT_ENV_NAME}")
     except CenvError as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(format_error_with_help(e, context='create'), err=True)
         raise SystemExit(1)
 
 @cli.command()
@@ -89,7 +129,7 @@ def use(name: str, force: bool) -> None:
         switch_environment(name, force=force)
         click.echo(f"✓ Switched to environment '{name}'")
     except CenvError as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(format_error_with_help(e, context='use'), err=True)
         raise SystemExit(1)
 
 @cli.command()
@@ -135,7 +175,7 @@ def delete(name: str, force: bool) -> None:
         click.echo("  Use 'cenv trash' to list deleted environments")
         click.echo("  Use 'cenv restore <backup-name>' to restore")
     except CenvError as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(format_error_with_help(e, context='delete'), err=True)
         raise SystemExit(1)
 
 @cli.command()
@@ -162,5 +202,5 @@ def restore(backup_name: str) -> None:
         name = restore_from_trash(backup_name)
         click.echo(f"✓ Restored environment '{name}' from trash")
     except CenvError as e:
-        click.echo(f"Error: {e}", err=True)
+        click.echo(format_error_with_help(e, context='restore'), err=True)
         raise SystemExit(1)

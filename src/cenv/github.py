@@ -5,9 +5,18 @@ import shutil
 from pathlib import Path
 import re
 from cenv.exceptions import GitOperationError
+from cenv.config import get_config
 
-# Security: 5 minute timeout for git operations
-GIT_TIMEOUT = 300
+__all__ = [
+    'is_valid_github_url',
+    'clone_from_github',
+    'get_git_timeout',
+]
+
+
+def get_git_timeout() -> int:
+    """Get configured git timeout"""
+    return get_config().git_timeout
 
 def is_valid_github_url(url: str) -> bool:
     """Validate if URL is a valid GitHub repository URL"""
@@ -41,7 +50,7 @@ def clone_from_github(url: str, target: Path) -> None:
             capture_output=True,
             text=True,
             check=False,
-            timeout=GIT_TIMEOUT,
+            timeout=get_git_timeout(),
         )
 
         if result.returncode != 0:
@@ -64,7 +73,8 @@ def clone_from_github(url: str, target: Path) -> None:
         # Clean up temp directory
         if temp_dir.exists():
             shutil.rmtree(temp_dir)
-        raise GitOperationError("clone", url, f"Operation timed out after {GIT_TIMEOUT} seconds")
+        timeout_val = get_git_timeout()
+        raise GitOperationError("clone", url, f"Operation timed out after {timeout_val} seconds")
     except Exception as e:
         # Clean up temp directory if it exists
         if temp_dir.exists():

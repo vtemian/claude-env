@@ -27,9 +27,48 @@ logger = get_logger(__name__)
 # Global lock for switch operations to ensure atomicity
 _switch_lock = threading.Lock()
 
+# Configuration constants
+ENVS_DIR_NAME = ".claude-envs"
+CLAUDE_DIR_NAME = ".claude"
+DEFAULT_ENV_NAME = "default"
+TRASH_DIR_NAME = ".trash"
+BACKUP_PREFIX = ".claude.backup."
+TEMP_LINK_NAME = ".claude.tmp"
+INIT_LOCK_NAME = "cenv-init.lock"
+
+__all__ = [
+    # Path utilities
+    'get_envs_dir',
+    'get_env_path',
+    'get_claude_dir',
+    'get_trash_dir',
+
+    # Environment management
+    'list_environments',
+    'get_current_environment',
+    'environment_exists',
+
+    # Operations
+    'init_environments',
+    'create_environment',
+    'switch_environment',
+    'delete_environment',
+
+    # Trash management
+    'list_trash',
+    'restore_from_trash',
+
+    # Constants
+    'ENVS_DIR_NAME',
+    'CLAUDE_DIR_NAME',
+    'DEFAULT_ENV_NAME',
+    'TRASH_DIR_NAME',
+]
+
+
 def get_envs_dir() -> Path:
     """Get the base directory for all environments"""
-    return Path.home() / ".claude-envs"
+    return Path.home() / ENVS_DIR_NAME
 
 def get_env_path(name: str) -> Path:
     """Get the path for a specific environment"""
@@ -37,11 +76,11 @@ def get_env_path(name: str) -> Path:
 
 def get_claude_dir() -> Path:
     """Get the ~/.claude directory path"""
-    return Path.home() / ".claude"
+    return Path.home() / CLAUDE_DIR_NAME
 
 def get_trash_dir() -> Path:
     """Get the trash directory for deleted environments"""
-    return get_envs_dir() / ".trash"
+    return get_envs_dir() / TRASH_DIR_NAME
 
 def list_trash() -> List[dict[str, str]]:
     """List backups in trash
@@ -116,7 +155,7 @@ def list_environments() -> List[str]:
     return [
         item.name
         for item in envs_dir.iterdir()
-        if item.is_dir() and item.name != ".trash"
+        if item.is_dir() and item.name != TRASH_DIR_NAME
     ]
 
 def get_current_environment() -> Optional[str]:
@@ -149,10 +188,10 @@ def init_environments() -> None:
     logger.info("Initializing cenv")
     claude_dir = get_claude_dir()
     envs_dir = get_envs_dir()
-    default_env = get_env_path("default")
+    default_env = get_env_path(DEFAULT_ENV_NAME)
 
     # Use lock file to prevent concurrent initialization
-    lock_file_path = Path(tempfile.gettempdir()) / "cenv-init.lock"
+    lock_file_path = Path(tempfile.gettempdir()) / INIT_LOCK_NAME
     lock_file = None
 
     try:
@@ -180,7 +219,7 @@ def init_environments() -> None:
         if claude_dir.exists() and not claude_dir.is_symlink():
             from datetime import datetime
             timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-            backup_dir = claude_dir.parent / f".claude.backup.{timestamp}"
+            backup_dir = claude_dir.parent / f"{BACKUP_PREFIX}{timestamp}"
             logger.info(f"Creating backup at {backup_dir}")
             shutil.copytree(claude_dir, backup_dir)
 
@@ -238,7 +277,7 @@ def init_environments() -> None:
             except Exception:
                 pass
 
-def create_environment(name: str, source: str = "default") -> None:
+def create_environment(name: str, source: str = DEFAULT_ENV_NAME) -> None:
     """Create a new environment by copying from source environment or GitHub URL"""
     # Validate environment name for security
     validate_environment_name(name)
@@ -311,7 +350,7 @@ def switch_environment(name: str, force: bool = False) -> None:
 
         # Create temporary symlink with atomic rename
         # This ensures no intermediate broken state
-        temp_link = claude_dir.parent / ".claude.tmp"
+        temp_link = claude_dir.parent / TEMP_LINK_NAME
 
         try:
             # Remove temp link if it exists from previous failed operation
@@ -356,7 +395,7 @@ def delete_environment(name: str) -> None:
         raise ActiveEnvironmentError(name)
 
     # Check if it's the default environment
-    if name == "default":
+    if name == DEFAULT_ENV_NAME:
         logger.error("Cannot delete default environment")
         raise ProtectedEnvironmentError(name)
 

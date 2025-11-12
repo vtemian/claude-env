@@ -2,6 +2,7 @@
 # ABOUTME: Loads settings from environment variables and config files
 """Configuration management for cenv"""
 import os
+import threading
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ __all__ = [
     'Config',
     'load_config',
     'get_config',
+    '_reset_config_for_testing',
 ]
 
 
@@ -100,17 +102,42 @@ def load_config(config_file: Optional[Path] = None) -> Config:
     return config
 
 
-# Global config instance (lazy-loaded)
+# Global config instance (lazy-loaded with thread safety)
 _config: Optional[Config] = None
+_config_lock = threading.Lock()
 
 
 def get_config() -> Config:
-    """Get global config instance (singleton)
+    """Get global config instance (thread-safe singleton)
 
     Returns:
         Global Config instance
+
+    Thread Safety:
+        This function uses double-checked locking to ensure thread-safe
+        singleton initialization. Multiple concurrent calls will all
+        receive the same Config instance.
     """
     global _config
-    if _config is None:
-        _config = load_config()
-    return _config
+
+    # Fast path - no lock needed if already configured
+    if _config is not None:
+        return _config
+
+    # Slow path - acquire lock for initialization
+    with _config_lock:
+        # Check again inside lock (another thread may have initialized)
+        if _config is None:
+            _config = load_config()
+        return _config
+
+
+def _reset_config_for_testing() -> None:
+    """Reset config singleton for testing
+
+    Warning:
+        This is for testing only and is not thread-safe during reset.
+        Only call from test fixtures.
+    """
+    global _config
+    _config = None

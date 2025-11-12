@@ -2,11 +2,37 @@
 name = "cenv"
 version = "0.1.0"
 description = "Claude environment manager - switch between Claude Code configurations"
+readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.10"
-dependencies = [
-    "click>=8.1.0",
-    "psutil>=5.9.0",
+authors = [
+    {name = "cenv contributors", email = "contributors@cenv.io"}
 ]
+keywords = ["claude", "environment", "cli", "devtools", "configuration"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS",
+    "Topic :: Software Development :: Tools",
+    "Topic :: System :: Installation/Setup",
+]
+dependencies = [
+    "click>=8.1.0,<9.0.0",
+    "psutil>=5.9.0,<6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/cenv"
+Documentation = "https://github.com/yourusername/cenv#readme"
+Repository = "https://github.com/yourusername/cenv"
+"Bug Tracker" = "https://github.com/yourusername/cenv/issues"
+Changelog = "https://github.com/yourusername/cenv/blob/main/CHANGELOG.md"
 
 [project.scripts]
 cenv = "cenv.cli:cli"

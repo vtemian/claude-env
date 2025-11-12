@@ -23,7 +23,7 @@ git clone https://github.com/<your-username>/cenv.git
 cd cenv
 
 # 3. Add upstream remote
-git remote add upstream https://github.com/yourusername/cenv.git
+git remote add upstream https://github.com/vtemian/cenv.git
 
 # 4. Install in development mode with dev dependencies
 uv pip install -e ".[dev]"

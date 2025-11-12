@@ -12,7 +12,7 @@ uvx --from . cenv --help
 # uvx cenv --help
 
 # Or install locally with uv (recommended for regular use)
-git clone https://github.com/yourusername/cenv.git
+git clone https://github.com/vtemian/cenv.git
 cd cenv
 uv pip install -e .
 

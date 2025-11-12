@@ -28,11 +28,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/cenv"
-Documentation = "https://github.com/yourusername/cenv#readme"
-Repository = "https://github.com/yourusername/cenv"
-"Bug Tracker" = "https://github.com/yourusername/cenv/issues"
-Changelog = "https://github.com/yourusername/cenv/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/vtemian/cenv"
+Documentation = "https://github.com/vtemian/cenv#readme"
+Repository = "https://github.com/vtemian/cenv"
+"Bug Tracker" = "https://github.com/vtemian/cenv/issues"
+Changelog = "https://github.com/vtemian/cenv/blob/main/CHANGELOG.md"
 
 [project.scripts]
 cenv = "cenv.cli:cli"

@@ -371,6 +371,9 @@ def switch_environment(name: str, force: bool = False) -> None:
             logger.info(f"Switched to environment '{name}'")
 
         except Exception as e:
+            # Log the error with details before cleanup
+            logger.error(f"Switch failed: {e}")
+
             # Clean up temporary symlink on error
             if temp_link.exists():
                 logger.debug(f"Cleaning up temporary symlink after error")

@@ -50,6 +50,40 @@ cenv delete work
 - **GitHub Templates**: Clone environment configs from repositories
 - **Shared Credentials**: API keys stored in macOS Keychain work across all environments
 
+## Configuration
+
+cenv can be configured via environment variables or a config file.
+
+### Config File
+
+Create `~/.cenvrc`:
+
+```ini
+# Git operation timeout in seconds (default: 300)
+git_timeout = 600
+
+# Logging level (default: INFO)
+log_level = DEBUG
+```
+
+### Environment Variables
+
+```bash
+export CENV_GIT_TIMEOUT=600
+export CENV_LOG_LEVEL=DEBUG
+```
+
+### Configuration Precedence
+
+1. Environment variables (highest priority)
+2. `~/.cenvrc` file
+3. Built-in defaults (lowest priority)
+
+### Available Options
+
+- `CENV_GIT_TIMEOUT` / `git_timeout`: Git operation timeout in seconds (default: 300)
+- `CENV_LOG_LEVEL` / `log_level`: Logging level - DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)
+
 ## Commands
 
 ### `cenv init`

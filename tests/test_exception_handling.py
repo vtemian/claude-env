@@ -16,6 +16,16 @@ def test_keyboard_interrupt_propagates_in_config():
                 load_config()
 
 
+def test_system_exit_propagates_in_config():
+    """Test that SystemExit isn't swallowed during config loading"""
+
+    with patch('pathlib.Path.exists', return_value=True):
+        with patch('pathlib.Path.read_text', side_effect=SystemExit(1)):
+            # SystemExit should propagate, not be swallowed
+            with pytest.raises(SystemExit):
+                load_config()
+
+
 def test_config_handles_io_errors_gracefully():
     """Test that IOError in config loading is handled gracefully"""
 

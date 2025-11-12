@@ -49,7 +49,7 @@ def format_error_with_help(error: CenvError, context: str = "") -> str:
                 message += "\nNo environments found. Run 'cenv init' to initialize.\n"
 
             message += "\nRun 'cenv list' to see all environments.\n"
-        except:
+        except Exception:  # Catch any error during help message generation
             message += "\nRun 'cenv list' to see available environments.\n"
 
     elif isinstance(error, InitializationError):

@@ -19,11 +19,11 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 # 1. Fork the repository on GitHub
 
 # 2. Clone YOUR fork
-git clone https://github.com/<your-username>/cenv.git
-cd cenv
+git clone https://github.com/<your-username>/claude-env.git
+cd claude-env
 
 # 3. Add upstream remote
-git remote add upstream https://github.com/vtemian/cenv.git
+git remote add upstream https://github.com/vtemian/claude-env.git
 
 # 4. Install in development mode with dev dependencies
 uv pip install -e ".[dev]"

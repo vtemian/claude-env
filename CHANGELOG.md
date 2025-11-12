@@ -37,5 +37,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reserved name validation
 - Git operation timeouts
 
-[Unreleased]: https://github.com/vtemian/cenv/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/vtemian/cenv/releases/tag/v0.1.0
+[Unreleased]: https://github.com/vtemian/claude-env/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/vtemian/claude-env/releases/tag/v0.1.0

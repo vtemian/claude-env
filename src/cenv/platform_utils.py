@@ -31,5 +31,5 @@ def check_platform_compatibility() -> None:
             f"Workarounds:\n"
             f"  • Windows users: Use WSL2 (Windows Subsystem for Linux)\n"
             f"  • Install a Linux distribution or use macOS\n\n"
-            f"For more information, see: https://github.com/vtemian/cenv#platform-support"
+            f"For more information, see: https://github.com/vtemian/claude-env#platform-support"
         )

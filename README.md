@@ -12,8 +12,8 @@ pip install claude-env
 uvx claude-env --help
 
 # Or install from source with uv (for development)
-git clone https://github.com/vtemian/cenv.git
-cd cenv
+git clone https://github.com/vtemian/claude-env.git
+cd claude-env
 uv pip install -e .
 
 # Or using pip

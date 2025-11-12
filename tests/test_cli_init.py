@@ -1,10 +1,13 @@
 # ABOUTME: Tests for CLI init command
 # ABOUTME: Verifies init command calls core init_environments and handles errors
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
+
 from cenv.cli import cli
 from cenv.exceptions import InitializationError
-from unittest.mock import patch
+
 
 def test_init_command_calls_init_environments():
     """Test that 'cenv init' calls init_environments"""

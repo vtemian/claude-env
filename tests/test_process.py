@@ -1,8 +1,11 @@
 # ABOUTME: Tests for Claude process detection functionality
 # ABOUTME: Verifies is_claude_running() and get_claude_processes() work correctly
-import pytest
 from unittest.mock import Mock, patch
-from cenv.process import is_claude_running, get_claude_processes
+
+import pytest
+
+from cenv.process import get_claude_processes, is_claude_running
+
 
 def test_is_claude_running_detects_processes():
     """Test is_claude_running() returns correct boolean based on actual process detection"""
@@ -42,8 +45,9 @@ def test_get_claude_processes_finds_claude_node_processes():
 
 def test_get_claude_processes_handles_access_denied():
     """Test that process iteration handles access denied errors"""
-    import psutil
     from unittest.mock import PropertyMock
+
+    import psutil
 
     mock_proc = Mock()
     type(mock_proc).info = PropertyMock(side_effect=psutil.AccessDenied())

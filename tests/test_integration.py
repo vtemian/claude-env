@@ -1,11 +1,14 @@
 # ABOUTME: Integration tests for full cenv workflow
 # ABOUTME: Tests complete user journeys from init through delete
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
+
 from cenv.cli import cli
-from pathlib import Path
-import tempfile
-from unittest.mock import patch
+
 
 @pytest.fixture
 def isolated_home(monkeypatch, tmp_path):

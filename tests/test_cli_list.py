@@ -1,10 +1,13 @@
 # ABOUTME: Tests for CLI list, current, and delete commands
 # ABOUTME: Verifies output formatting and confirmation prompts
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
+
 from cenv.cli import cli
 from cenv.exceptions import EnvironmentNotFoundError
-from unittest.mock import patch
+
 
 def test_list_command_shows_all_environments():
     """Test that 'cenv list' shows all environments"""

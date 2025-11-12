@@ -1,6 +1,8 @@
-import pytest
 from pathlib import Path
+
+import pytest
 from click.testing import CliRunner
+
 from cenv.cli import cli
 from cenv.core import create_environment, init_environments
 from cenv.validation import InvalidEnvironmentNameError

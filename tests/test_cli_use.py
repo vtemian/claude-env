@@ -1,10 +1,13 @@
 # ABOUTME: Test suite for CLI use command functionality
 # ABOUTME: Tests environment switching via CLI with confirmation prompts and --force flag
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
+
 from cenv.cli import cli
 from cenv.exceptions import EnvironmentNotFoundError
-from unittest.mock import patch
+
 
 def test_use_command_switches_environment():
     """Test that 'cenv use work' switches to work environment"""

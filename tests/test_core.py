@@ -1,6 +1,9 @@
 from pathlib import Path
+
 import pytest
-from cenv.core import get_envs_dir, get_env_path, get_claude_dir, switch_environment
+
+from cenv.core import get_claude_dir, get_env_path, get_envs_dir, switch_environment
+
 
 def test_get_envs_dir_returns_correct_path():
     """Test that envs directory path is ~/.claude-envs"""
@@ -20,7 +23,7 @@ def test_get_claude_dir_returns_correct_path():
 def test_switch_environment_logs_error_on_failure(tmp_path, caplog, monkeypatch):
     """Test that switch_environment logs detailed error when cleanup is needed."""
     import logging
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
 
     envs_dir = tmp_path / ".claude-envs"
     envs_dir.mkdir()

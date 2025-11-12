@@ -1,21 +1,24 @@
 # ABOUTME: Tests for environment deletion functionality
 # ABOUTME: Verifies deletion safety checks and directory removal
-import pytest
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
 from cenv.core import (
+    create_environment,
     delete_environment,
     get_trash_dir,
-    restore_from_trash,
-    list_trash,
     init_environments,
-    create_environment,
+    list_trash,
+    restore_from_trash,
 )
 from cenv.exceptions import (
-    EnvironmentNotFoundError,
     ActiveEnvironmentError,
+    EnvironmentNotFoundError,
     ProtectedEnvironmentError,
 )
-from unittest.mock import patch
+
 
 @pytest.fixture
 def multi_env_setup(monkeypatch, tmp_path):

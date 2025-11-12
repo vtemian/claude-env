@@ -1,6 +1,9 @@
 from pathlib import Path
-from cenv.core import list_environments, get_current_environment, environment_exists
+
 import pytest
+
+from cenv.core import environment_exists, get_current_environment, list_environments
+
 
 @pytest.fixture
 def mock_envs_dir(monkeypatch, tmp_path):

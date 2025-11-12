@@ -2,6 +2,7 @@
 # ABOUTME: Ensures cenv runs only on supported platforms
 """Platform compatibility utilities for cenv"""
 import platform
+
 from cenv.exceptions import PlatformNotSupportedError
 
 __all__ = [

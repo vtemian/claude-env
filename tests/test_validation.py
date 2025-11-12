@@ -1,8 +1,9 @@
 import pytest
+
 from cenv.validation import (
-    validate_environment_name,
-    InvalidEnvironmentNameError,
     VALID_NAME_PATTERN,
+    InvalidEnvironmentNameError,
+    validate_environment_name,
 )
 
 

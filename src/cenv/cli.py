@@ -1,22 +1,24 @@
 # ABOUTME: CLI interface for cenv using Click framework
 # ABOUTME: Provides commands for init, create, use, list, current, delete, trash, and restore
-import click
 import logging
 from pathlib import Path
+
+import click
+
 from cenv.core import (
-    init_environments,
+    DEFAULT_ENV_NAME,
     create_environment,
-    switch_environment,
     delete_environment,
-    list_environments,
     get_current_environment,
+    init_environments,
+    list_environments,
     list_trash,
     restore_from_trash,
-    DEFAULT_ENV_NAME,
+    switch_environment,
 )
-from cenv.process import is_claude_running
-from cenv.logging_config import setup_logging
 from cenv.exceptions import CenvError, EnvironmentNotFoundError, InitializationError
+from cenv.logging_config import setup_logging
+from cenv.process import is_claude_running
 
 __all__ = ['cli']
 

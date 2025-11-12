@@ -20,8 +20,10 @@ The detection prioritizes false negatives over false positives:
   • If uncertain, assumes Claude is NOT running (allows operation)
   • Better to allow operation than unnecessarily block user
 """
-import psutil
 from typing import List
+
+import psutil
+
 from cenv.logging_config import get_logger
 
 __all__ = [
@@ -32,7 +34,7 @@ __all__ = [
 logger = get_logger(__name__)
 
 
-def get_claude_processes() -> List[psutil.Process]:
+def get_claude_processes() -> list[psutil.Process]:
     """Get all running Claude Code processes (best-effort detection)
 
     Returns:

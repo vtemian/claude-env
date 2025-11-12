@@ -1,8 +1,10 @@
 import logging
-from pathlib import Path
-import pytest
 import threading
-from cenv.logging_config import setup_logging, get_logger, reset_logging_config
+from pathlib import Path
+
+import pytest
+
+from cenv.logging_config import get_logger, reset_logging_config, setup_logging
 
 
 @pytest.fixture(autouse=True)

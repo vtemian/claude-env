@@ -1,8 +1,16 @@
 import os
-import pytest
 import threading
 from pathlib import Path
-from cenv.config import load_config, Config, DEFAULT_GIT_TIMEOUT, get_config, _reset_config_for_testing
+
+import pytest
+
+from cenv.config import (
+    DEFAULT_GIT_TIMEOUT,
+    Config,
+    _reset_config_for_testing,
+    get_config,
+    load_config,
+)
 
 
 @pytest.fixture(autouse=True)

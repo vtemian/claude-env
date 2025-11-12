@@ -1,17 +1,19 @@
-import pytest
 import os
 import threading
 from pathlib import Path
+
+import pytest
+
 from cenv.core import (
-    init_environments,
     create_environment,
-    switch_environment,
     delete_environment,
+    init_environments,
     list_environments,
+    switch_environment,
 )
 from cenv.exceptions import (
-    EnvironmentNotFoundError,
     EnvironmentExistsError,
+    EnvironmentNotFoundError,
     InitializationError,
 )
 from cenv.validation import InvalidEnvironmentNameError

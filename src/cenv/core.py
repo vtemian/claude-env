@@ -1,25 +1,26 @@
 # ABOUTME: Core functionality for cenv environment management
 # ABOUTME: Provides path utilities and environment operations
 """Core functionality for cenv"""
-from pathlib import Path
-from typing import List, Optional
 import shutil
 import threading
-from cenv.process import is_claude_running
+from pathlib import Path
+from typing import List, Optional
+
+from cenv.exceptions import (
+    ActiveEnvironmentError,
+    ClaudeRunningError,
+    EnvironmentExistsError,
+    EnvironmentNotFoundError,
+    GitOperationError,
+    InitializationError,
+    InvalidBackupFormatError,
+    ProtectedEnvironmentError,
+    SymlinkStateError,
+)
 from cenv.github import clone_from_github, is_valid_github_url
 from cenv.logging_config import get_logger
-from cenv.exceptions import (
-    EnvironmentNotFoundError,
-    EnvironmentExistsError,
-    ClaudeRunningError,
-    InitializationError,
-    GitOperationError,
-    InvalidBackupFormatError,
-    SymlinkStateError,
-    ActiveEnvironmentError,
-    ProtectedEnvironmentError,
-)
 from cenv.platform_utils import check_platform_compatibility
+from cenv.process import is_claude_running
 from cenv.validation import validate_environment_name
 
 logger = get_logger(__name__)
@@ -82,7 +83,7 @@ def get_trash_dir() -> Path:
     """Get the trash directory for deleted environments"""
     return get_envs_dir() / TRASH_DIR_NAME
 
-def list_trash() -> List[dict[str, str]]:
+def list_trash() -> list[dict[str, str]]:
     """List backups in trash
 
     Returns:
@@ -145,7 +146,7 @@ def restore_from_trash(backup_name: str) -> str:
 
     return name
 
-def list_environments() -> List[str]:
+def list_environments() -> list[str]:
     """List all available environments"""
     envs_dir = get_envs_dir()
 
@@ -158,7 +159,7 @@ def list_environments() -> List[str]:
         if item.is_dir() and item.name != TRASH_DIR_NAME
     ]
 
-def get_current_environment() -> Optional[str]:
+def get_current_environment() -> str | None:
     """Get the currently active environment name"""
     claude_dir = get_claude_dir()
 
@@ -274,7 +275,7 @@ def init_environments() -> None:
                 fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
                 lock_file.close()
                 lock_file_path.unlink(missing_ok=True)
-            except (OSError, IOError) as e:
+            except OSError as e:
                 # Best effort cleanup - log but don't fail
                 logger.warning(f"Failed to clean up lock file: {e}")
             # Note: Other exceptions (KeyboardInterrupt, etc.) will propagate
@@ -376,7 +377,7 @@ def switch_environment(name: str, force: bool = False) -> None:
 
             # Clean up temporary symlink on error
             if temp_link.exists():
-                logger.debug(f"Cleaning up temporary symlink after error")
+                logger.debug("Cleaning up temporary symlink after error")
                 temp_link.unlink()
             raise
 

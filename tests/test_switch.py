@@ -1,11 +1,14 @@
 # ABOUTME: Tests for environment switching functionality
 # ABOUTME: Verifies symlink management, process detection, and safety checks
-import pytest
 import threading
 from pathlib import Path
-from cenv.core import switch_environment, init_environments, create_environment
-from cenv.exceptions import EnvironmentNotFoundError, ClaudeRunningError
 from unittest.mock import patch
+
+import pytest
+
+from cenv.core import create_environment, init_environments, switch_environment
+from cenv.exceptions import ClaudeRunningError, EnvironmentNotFoundError
+
 
 @pytest.fixture
 def multi_env_setup(monkeypatch, tmp_path):

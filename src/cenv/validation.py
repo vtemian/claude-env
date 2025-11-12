@@ -2,6 +2,7 @@
 # ABOUTME: Prevents path traversal and injection attacks
 """Input validation utilities for cenv"""
 import re
+
 from cenv.exceptions import CenvError
 
 __all__ = [

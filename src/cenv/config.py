@@ -3,9 +3,9 @@
 """Configuration management for cenv"""
 import os
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
-from dataclasses import dataclass
 
 __all__ = [
     'Config',
@@ -37,7 +37,7 @@ class Config:
     lock_file_name: str = DEFAULT_LOCK_FILE_NAME
 
 
-def load_config(config_file: Optional[Path] = None) -> Config:
+def load_config(config_file: Path | None = None) -> Config:
     """Load configuration from environment and optional config file
 
     Args:
@@ -85,7 +85,7 @@ def load_config(config_file: Optional[Path] = None) -> Config:
                             pass  # Use default
                     elif key == 'log_level':
                         config.log_level = value.upper()
-        except (OSError, IOError, UnicodeDecodeError):
+        except (OSError, UnicodeDecodeError):
             # If config file is malformed or unreadable, use defaults
             # Note: We don't use logging here as logging config depends on this
             pass
@@ -106,7 +106,7 @@ def load_config(config_file: Optional[Path] = None) -> Config:
 
 
 # Global config instance (lazy-loaded with thread safety)
-_config: Optional[Config] = None
+_config: Config | None = None
 _config_lock = threading.Lock()
 
 

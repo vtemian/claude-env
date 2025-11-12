@@ -1,10 +1,13 @@
 # ABOUTME: Tests for CLI create command
 # ABOUTME: Verifies create command handles both default and GitHub repo sources
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
+
 from cenv.cli import cli
 from cenv.exceptions import EnvironmentExistsError
-from unittest.mock import patch
+
 
 def test_create_command_creates_from_default():
     """Test that 'cenv create work' creates from default"""

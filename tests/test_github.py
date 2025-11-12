@@ -1,12 +1,15 @@
 # ABOUTME: Tests for GitHub repository cloning functionality
 # ABOUTME: Validates URL validation and git clone subprocess calls
-import pytest
-from pathlib import Path
-from cenv.github import clone_from_github, is_valid_github_url
-from unittest.mock import patch, MagicMock
-from cenv.exceptions import GitOperationError
-import tempfile
 import shutil
+import tempfile
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
+
+from cenv.exceptions import GitOperationError
+from cenv.github import clone_from_github, is_valid_github_url
+
 
 def test_is_valid_github_url_validates_https():
     """Test GitHub URL validation for HTTPS"""

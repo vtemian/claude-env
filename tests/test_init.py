@@ -1,9 +1,12 @@
-import pytest
+import shutil
 from pathlib import Path
+from unittest.mock import patch
+
+import pytest
+
 from cenv.core import init_environments
 from cenv.exceptions import InitializationError
-from unittest.mock import patch
-import shutil
+
 
 @pytest.fixture
 def mock_dirs(monkeypatch, tmp_path):

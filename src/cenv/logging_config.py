@@ -20,7 +20,7 @@ _config_lock = threading.Lock()
 
 def setup_logging(
     level: int = logging.INFO,
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
 ) -> None:
     """Configure logging for cenv (thread-safe)
 

@@ -1,7 +1,9 @@
 import platform
-import pytest
 from unittest.mock import patch
-from cenv.platform_utils import check_platform_compatibility, PlatformNotSupportedError
+
+import pytest
+
+from cenv.platform_utils import PlatformNotSupportedError, check_platform_compatibility
 
 
 def test_unix_platforms_are_supported():

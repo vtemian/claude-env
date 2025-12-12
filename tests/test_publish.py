@@ -1,11 +1,12 @@
 # ABOUTME: Tests for publish functionality
 # ABOUTME: Validates sensitive file detection and git push operations
-import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from cenv.publish import is_sensitive_file, SENSITIVE_PATTERNS, get_files_to_publish, publish_to_repo
+import pytest
+
 from cenv.exceptions import GitOperationError
+from cenv.publish import get_files_to_publish, is_sensitive_file, publish_to_repo
 
 
 def test_is_sensitive_file_detects_credentials():
@@ -124,7 +125,7 @@ def test_publish_to_repo_calls_git_clone(mock_run, tmp_path):
 
     mock_run.side_effect = simulate_git_ops
 
-    result = publish_to_repo(env_dir, "https://github.com/user/repo")
+    publish_to_repo(env_dir, "https://github.com/user/repo")
 
     # Verify git clone was called
     clone_calls = [c for c in mock_run.call_args_list if "clone" in c[0][0]]

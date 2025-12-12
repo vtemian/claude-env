@@ -2,6 +2,7 @@
 # ABOUTME: Validates sensitive file detection and git push operations
 import pytest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from cenv.publish import is_sensitive_file, SENSITIVE_PATTERNS, get_files_to_publish, publish_to_repo
 from cenv.exceptions import GitOperationError
@@ -104,3 +105,79 @@ def test_publish_to_repo_rejects_invalid_url(tmp_path):
 
     with pytest.raises(GitOperationError, match="Invalid GitHub URL"):
         publish_to_repo(env_dir, "not-a-valid-url")
+
+
+@patch("subprocess.run")
+def test_publish_to_repo_calls_git_clone(mock_run, tmp_path):
+    """Test that publish clones the target repository"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    (env_dir / "CLAUDE.md").write_text("# Config")
+
+    def simulate_git_ops(cmd, **kwargs):
+        if cmd[0] == "git" and cmd[1] == "clone":
+            # Create temp dir with .git
+            temp_dir = Path(cmd[5])
+            temp_dir.mkdir(parents=True)
+            (temp_dir / ".git").mkdir()
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    mock_run.side_effect = simulate_git_ops
+
+    result = publish_to_repo(env_dir, "https://github.com/user/repo")
+
+    # Verify git clone was called
+    clone_calls = [c for c in mock_run.call_args_list if "clone" in c[0][0]]
+    assert len(clone_calls) == 1
+
+
+@patch("subprocess.run")
+def test_publish_to_repo_handles_no_changes(mock_run, tmp_path):
+    """Test that publish handles no-changes scenario gracefully"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    (env_dir / "CLAUDE.md").write_text("# Config")
+
+    def simulate_git_ops(cmd, **kwargs):
+        if cmd[0] == "git" and cmd[1] == "clone":
+            temp_dir = Path(cmd[5])
+            temp_dir.mkdir(parents=True)
+            (temp_dir / ".git").mkdir()
+        if cmd[0] == "git" and cmd[1] == "status":
+            # Return empty status (no changes)
+            return MagicMock(returncode=0, stdout="", stderr="")
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    mock_run.side_effect = simulate_git_ops
+
+    result = publish_to_repo(env_dir, "https://github.com/user/repo")
+
+    assert result.success is True
+    assert result.files_published == 0
+
+
+@patch("subprocess.run")
+def test_publish_to_repo_reports_excluded_files(mock_run, tmp_path):
+    """Test that publish reports excluded sensitive files"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    (env_dir / "CLAUDE.md").write_text("# Config")
+    (env_dir / "credentials.json").write_text("secret")
+    (env_dir / ".env").write_text("SECRET=x")
+
+    def simulate_git_ops(cmd, **kwargs):
+        if cmd[0] == "git" and cmd[1] == "clone":
+            temp_dir = Path(cmd[5])
+            temp_dir.mkdir(parents=True)
+            (temp_dir / ".git").mkdir()
+        if cmd[0] == "git" and cmd[1] == "status":
+            return MagicMock(returncode=0, stdout="M file", stderr="")
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    mock_run.side_effect = simulate_git_ops
+
+    result = publish_to_repo(env_dir, "https://github.com/user/repo")
+
+    assert result.files_excluded == 2
+    assert "credentials.json" in result.excluded_files
+    assert ".env" in result.excluded_files

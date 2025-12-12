@@ -100,6 +100,7 @@ def get_files_to_publish(env_path: Path) -> tuple[list[Path], list[Path]]:
 @dataclass
 class PublishResult:
     """Result of a publish operation"""
+
     success: bool
     files_published: int
     files_excluded: int

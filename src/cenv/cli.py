@@ -81,9 +81,7 @@ def main(
     verbose: Annotated[
         bool, typer.Option("--verbose", "-v", help="Enable verbose logging")
     ] = False,
-    log_file: Annotated[
-        Path | None, typer.Option("--log-file", help="Write logs to file")
-    ] = None,
+    log_file: Annotated[Path | None, typer.Option("--log-file", help="Write logs to file")] = None,
     version: Annotated[
         bool | None,
         typer.Option("--version", callback=version_callback, is_eager=True),
@@ -131,9 +129,7 @@ def create(
 @app.command()
 def use(
     name: Annotated[str, typer.Argument(help="Name of the environment to switch to")],
-    force: Annotated[
-        bool, typer.Option("--force", "-f", help="Skip confirmation prompt")
-    ] = False,
+    force: Annotated[bool, typer.Option("--force", "-f", help="Skip confirmation prompt")] = False,
 ) -> None:
     """Switch to a different environment"""
     try:
@@ -184,9 +180,7 @@ def current() -> None:
 @app.command()
 def delete(
     name: Annotated[str, typer.Argument(help="Name of the environment to delete")],
-    force: Annotated[
-        bool, typer.Option("--force", "-f", help="Skip confirmation prompt")
-    ] = False,
+    force: Annotated[bool, typer.Option("--force", "-f", help="Skip confirmation prompt")] = False,
 ) -> None:
     """Delete an environment (moves to trash)"""
     try:

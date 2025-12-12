@@ -187,4 +187,5 @@ def test_publish_to_repo_reports_excluded_files(mock_run, tmp_path):
 def test_publish_environment_exported_from_core():
     """Test that publish_environment is exported from core"""
     from cenv.core import publish_environment
+
     assert callable(publish_environment)

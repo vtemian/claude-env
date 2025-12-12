@@ -3,10 +3,12 @@
 """Publish functionality for cenv"""
 
 import fnmatch
+from pathlib import Path
 
 __all__ = [
     "SENSITIVE_PATTERNS",
     "is_sensitive_file",
+    "get_files_to_publish",
 ]
 
 # Patterns for files that should never be published
@@ -59,3 +61,25 @@ def is_sensitive_file(filename: str) -> bool:
             return True
 
     return False
+
+
+def get_files_to_publish(env_path: Path) -> tuple[list[Path], list[Path]]:
+    """Get lists of files to publish and files to exclude
+
+    Args:
+        env_path: Path to the environment directory
+
+    Returns:
+        Tuple of (files_to_publish, excluded_files)
+    """
+    to_publish: list[Path] = []
+    excluded: list[Path] = []
+
+    for file_path in env_path.rglob("*"):
+        if file_path.is_file():
+            if is_sensitive_file(file_path.name):
+                excluded.append(file_path)
+            else:
+                to_publish.append(file_path)
+
+    return to_publish, excluded

@@ -276,7 +276,7 @@ def init_environments() -> None:
 
     finally:
         # Release lock and clean up
-        if lock_file:
+        if lock_file is not None:
             try:
                 fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
                 lock_file.close()

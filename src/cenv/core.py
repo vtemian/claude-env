@@ -21,6 +21,7 @@ from cenv.github import clone_from_github, is_valid_github_url
 from cenv.logging_config import get_logger
 from cenv.platform_utils import check_platform_compatibility
 from cenv.process import is_claude_running
+from cenv.publish import publish_to_repo, PublishResult
 from cenv.validation import validate_environment_name
 
 logger = get_logger(__name__)
@@ -52,6 +53,7 @@ __all__ = [
     "create_environment",
     "switch_environment",
     "delete_environment",
+    "publish_environment",
     # Trash management
     "list_trash",
     "restore_from_trash",
@@ -429,3 +431,26 @@ def delete_environment(name: str) -> None:
     logger.info(f"Moving '{name}' to trash as '{backup_name}'")
     shutil.move(str(target_env), str(backup_path))
     logger.info(f"Environment '{name}' moved to trash (backup: {backup_name})")
+
+
+def publish_environment(repo_url: str) -> PublishResult:
+    """Publish the currently active environment to a GitHub repository
+
+    Args:
+        repo_url: GitHub repository URL
+
+    Returns:
+        PublishResult with operation details
+
+    Raises:
+        InitializationError: If cenv is not initialized
+        GitOperationError: If git operations fail
+    """
+    logger.info(f"Publishing current environment to {repo_url}")
+
+    current = get_current_environment()
+    if current is None:
+        raise InitializationError("No active environment. Run 'cenv init' first.")
+
+    env_path = get_env_path(current)
+    return publish_to_repo(env_path, repo_url)

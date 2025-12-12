@@ -21,7 +21,7 @@ from cenv.github import clone_from_github, is_valid_github_url
 from cenv.logging_config import get_logger
 from cenv.platform_utils import check_platform_compatibility
 from cenv.process import is_claude_running
-from cenv.publish import publish_to_repo, PublishResult
+from cenv.publish import PublishResult, publish_to_repo
 from cenv.validation import validate_environment_name
 
 logger = get_logger(__name__)

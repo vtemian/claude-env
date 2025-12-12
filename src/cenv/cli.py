@@ -14,6 +14,7 @@ from cenv.core import (
     init_environments,
     list_environments,
     list_trash,
+    publish_environment,
     restore_from_trash,
     switch_environment,
 )
@@ -230,6 +231,31 @@ def restore(
         typer.echo(f"✓ Restored environment '{name}' from trash")
     except CenvError as e:
         typer.echo(format_error_with_help(e, context="restore"), err=True)
+        raise SystemExit(1)
+
+
+@app.command()
+def publish(
+    repo_url: Annotated[str, typer.Argument(help="GitHub repository URL to publish to")],
+) -> None:
+    """Publish current environment to a GitHub repository"""
+    try:
+        current = get_current_environment()
+        if current is None:
+            typer.echo("Error: No active environment to publish.", err=True)
+            typer.echo("Run 'cenv init' to initialize.", err=True)
+            raise SystemExit(1)
+
+        result = publish_environment(repo_url)
+
+        typer.echo(f"✓ Published environment '{current}' to {repo_url}")
+        if result.files_excluded > 0:
+            typer.echo(
+                f"  Excluded {result.files_excluded} sensitive file(s) "
+                "(use --verbose to see details)"
+            )
+    except CenvError as e:
+        typer.echo(format_error_with_help(e, context="publish"), err=True)
         raise SystemExit(1)
 
 

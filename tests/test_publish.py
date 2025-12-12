@@ -3,7 +3,8 @@
 import pytest
 from pathlib import Path
 
-from cenv.publish import is_sensitive_file, SENSITIVE_PATTERNS, get_files_to_publish
+from cenv.publish import is_sensitive_file, SENSITIVE_PATTERNS, get_files_to_publish, publish_to_repo
+from cenv.exceptions import GitOperationError
 
 
 def test_is_sensitive_file_detects_credentials():
@@ -93,3 +94,13 @@ def test_get_files_to_publish_empty_directory(tmp_path):
 
     assert to_publish == []
     assert excluded == []
+
+
+def test_publish_to_repo_rejects_invalid_url(tmp_path):
+    """Test that publish raises error for invalid URL"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    (env_dir / "CLAUDE.md").write_text("# Config")
+
+    with pytest.raises(GitOperationError, match="Invalid GitHub URL"):
+        publish_to_repo(env_dir, "not-a-valid-url")

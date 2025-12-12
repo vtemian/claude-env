@@ -1,9 +1,10 @@
-# ABOUTME: CLI interface for cenv using Click framework
+# ABOUTME: CLI interface for cenv using Typer framework
 # ABOUTME: Provides commands for init, create, use, list, current, delete, trash, and restore
 import logging
 from pathlib import Path
+from typing import Annotated
 
-import click
+import typer
 
 from cenv.core import (
     DEFAULT_ENV_NAME,
@@ -21,6 +22,20 @@ from cenv.logging_config import setup_logging
 from cenv.process import is_claude_running
 
 __all__ = ["cli"]
+
+app = typer.Typer(
+    help="cenv - Claude environment manager\n\n"
+    "Manage isolated Claude Code configurations like pyenv manages Python versions."
+)
+
+
+def version_callback(value: bool) -> None:
+    """Print version and exit."""
+    if value:
+        from importlib.metadata import version
+
+        typer.echo(f"cenv {version('claude-env')}")
+        raise typer.Exit()
 
 
 def format_error_with_help(error: CenvError, context: str = "") -> str:
@@ -60,148 +75,163 @@ def format_error_with_help(error: CenvError, context: str = "") -> str:
     return message.rstrip()
 
 
-@click.group()
-@click.version_option()
-@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
-@click.option("--log-file", type=click.Path(path_type=Path), help="Write logs to file")
-def cli(verbose: bool, log_file: Path) -> None:
-    """cenv - Claude environment manager
-
-    Manage isolated Claude Code configurations like pyenv manages Python versions.
-    """
+@app.callback()
+def main(
+    verbose: Annotated[
+        bool, typer.Option("--verbose", "-v", help="Enable verbose logging")
+    ] = False,
+    log_file: Annotated[
+        Path | None, typer.Option("--log-file", help="Write logs to file")
+    ] = None,
+    version: Annotated[
+        bool | None,
+        typer.Option("--version", callback=version_callback, is_eager=True),
+    ] = None,
+) -> None:
+    """cenv - Claude environment manager"""
     level = logging.DEBUG if verbose else logging.INFO
     setup_logging(level=level, log_file=log_file)
 
 
-@cli.command()
+@app.command()
 def init() -> None:
     """Initialize cenv by migrating ~/.claude to ~/.claude-envs/default/"""
     try:
         init_environments()
-        click.echo("✓ Initialized cenv successfully!")
-        click.echo("  ~/.claude → ~/.claude-envs/default/")
-        click.echo("\nUse 'cenv create <name>' to create new environments.")
+        typer.echo("✓ Initialized cenv successfully!")
+        typer.echo("  ~/.claude → ~/.claude-envs/default/")
+        typer.echo("\nUse 'cenv create <name>' to create new environments.")
     except CenvError as e:
-        click.echo(format_error_with_help(e, context="init"), err=True)
+        typer.echo(format_error_with_help(e, context="init"), err=True)
         raise SystemExit(1)
 
 
-@cli.command()
-@click.argument("name")
-@click.option(
-    "--from-repo",
-    help="Clone from GitHub repository URL",
-    metavar="URL",
-)
-def create(name: str, from_repo: str) -> None:
+@app.command()
+def create(
+    name: Annotated[str, typer.Argument(help="Name of the environment to create")],
+    from_repo: Annotated[
+        str | None, typer.Option("--from-repo", help="Clone from GitHub repository URL")
+    ] = None,
+) -> None:
     """Create a new environment"""
     try:
         source = from_repo if from_repo else DEFAULT_ENV_NAME
         create_environment(name, source=source)
 
         if from_repo:
-            click.echo(f"✓ Created environment '{name}' from {from_repo}")
+            typer.echo(f"✓ Created environment '{name}' from {from_repo}")
         else:
-            click.echo(f"✓ Created environment '{name}' from {DEFAULT_ENV_NAME}")
+            typer.echo(f"✓ Created environment '{name}' from {DEFAULT_ENV_NAME}")
     except CenvError as e:
-        click.echo(format_error_with_help(e, context="create"), err=True)
+        typer.echo(format_error_with_help(e, context="create"), err=True)
         raise SystemExit(1)
 
 
-@cli.command()
-@click.argument("name")
-@click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
-def use(name: str, force: bool) -> None:
+@app.command()
+def use(
+    name: Annotated[str, typer.Argument(help="Name of the environment to switch to")],
+    force: Annotated[
+        bool, typer.Option("--force", "-f", help="Skip confirmation prompt")
+    ] = False,
+) -> None:
     """Switch to a different environment"""
     try:
         # Check if Claude is running
         if is_claude_running() and not force:
-            click.echo("⚠️  Claude is running. Switching environments may cause issues.")
-            if not click.confirm("Continue anyway?"):
-                click.echo("Cancelled.")
+            typer.echo("⚠️  Claude is running. Switching environments may cause issues.")
+            if not typer.confirm("Continue anyway?"):
+                typer.echo("Cancelled.")
                 return
             force = True
 
         switch_environment(name, force=force)
-        click.echo(f"✓ Switched to environment '{name}'")
+        typer.echo(f"✓ Switched to environment '{name}'")
     except CenvError as e:
-        click.echo(format_error_with_help(e, context="use"), err=True)
+        typer.echo(format_error_with_help(e, context="use"), err=True)
         raise SystemExit(1)
 
 
-@cli.command()
-def list() -> None:
+@app.command("list")
+def list_cmd() -> None:
     """List all environments"""
     envs = list_environments()
     current = get_current_environment()
 
     if not envs:
-        click.echo("No environments found.")
-        click.echo("Run 'cenv init' to initialize.")
+        typer.echo("No environments found.")
+        typer.echo("Run 'cenv init' to initialize.")
         return
 
-    click.echo("Available environments:")
+    typer.echo("Available environments:")
     for env in sorted(envs):
         marker = " → " if env == current else "   "
-        click.echo(f"{marker}{env}")
+        typer.echo(f"{marker}{env}")
 
 
-@cli.command()
+@app.command()
 def current() -> None:
     """Show the currently active environment"""
     current_env = get_current_environment()
 
     if current_env is None:
-        click.echo("No active environment.")
-        click.echo("Run 'cenv init' to initialize.")
+        typer.echo("No active environment.")
+        typer.echo("Run 'cenv init' to initialize.")
     else:
-        click.echo(current_env)
+        typer.echo(current_env)
 
 
-@cli.command()
-@click.argument("name")
-@click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
-def delete(name: str, force: bool) -> None:
+@app.command()
+def delete(
+    name: Annotated[str, typer.Argument(help="Name of the environment to delete")],
+    force: Annotated[
+        bool, typer.Option("--force", "-f", help="Skip confirmation prompt")
+    ] = False,
+) -> None:
     """Delete an environment (moves to trash)"""
     try:
         if not force:
-            if not click.confirm(f"Delete environment '{name}'?"):
-                click.echo("Cancelled.")
+            if not typer.confirm(f"Delete environment '{name}'?"):
+                typer.echo("Cancelled.")
                 return
 
         delete_environment(name)
-        click.echo(f"✓ Deleted environment '{name}' (moved to trash)")
-        click.echo("  Use 'cenv trash' to list deleted environments")
-        click.echo("  Use 'cenv restore <backup-name>' to restore")
+        typer.echo(f"✓ Deleted environment '{name}' (moved to trash)")
+        typer.echo("  Use 'cenv trash' to list deleted environments")
+        typer.echo("  Use 'cenv restore <backup-name>' to restore")
     except CenvError as e:
-        click.echo(format_error_with_help(e, context="delete"), err=True)
+        typer.echo(format_error_with_help(e, context="delete"), err=True)
         raise SystemExit(1)
 
 
-@cli.command()
+@app.command()
 def trash() -> None:
     """List deleted environments in trash"""
     backups = list_trash()
 
     if not backups:
-        click.echo("Trash is empty.")
+        typer.echo("Trash is empty.")
         return
 
-    click.echo("Deleted environments (newest first):")
+    typer.echo("Deleted environments (newest first):")
     for backup in backups:
-        click.echo(f"  {backup['backup_name']}")
-        click.echo(f"    Environment: {backup['name']}")
-        click.echo(f"    Deleted: {backup['timestamp']}")
-        click.echo()
+        typer.echo(f"  {backup['backup_name']}")
+        typer.echo(f"    Environment: {backup['name']}")
+        typer.echo(f"    Deleted: {backup['timestamp']}")
+        typer.echo()
 
 
-@cli.command()
-@click.argument("backup_name")
-def restore(backup_name: str) -> None:
+@app.command()
+def restore(
+    backup_name: Annotated[str, typer.Argument(help="Name of the backup to restore")],
+) -> None:
     """Restore an environment from trash"""
     try:
         name = restore_from_trash(backup_name)
-        click.echo(f"✓ Restored environment '{name}' from trash")
+        typer.echo(f"✓ Restored environment '{name}' from trash")
     except CenvError as e:
-        click.echo(format_error_with_help(e, context="restore"), err=True)
+        typer.echo(format_error_with_help(e, context="restore"), err=True)
         raise SystemExit(1)
+
+
+# Entry point for pyproject.toml scripts
+cli = app

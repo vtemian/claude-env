@@ -2,7 +2,7 @@
 # ABOUTME: Tests environment switching via CLI with confirmation prompts and --force flag
 from unittest.mock import patch
 
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
 from cenv.cli import cli
 from cenv.exceptions import EnvironmentNotFoundError

@@ -2,7 +2,7 @@
 # ABOUTME: Verifies create command handles both default and GitHub repo sources
 from unittest.mock import patch
 
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
 from cenv.cli import cli
 from cenv.exceptions import EnvironmentExistsError

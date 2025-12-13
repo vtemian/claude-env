@@ -43,7 +43,7 @@ uvx claude-env --help
 
 **Complete Isolation** - Each environment is a separate world. CLAUDE.md, settings.json, agents, plugins, history - all isolated.
 
-**Team Templates** - Clone environment configs from GitHub. Onboard new devs in one command.
+**Team Templates** - Clone environment configs from GitHub. Onboard new devs in one command. Publish your setup for others to use.
 
 **Safety Built-In** - Warns when Claude is running. Validates all inputs. Atomic operations. Deleted environments go to trash, not `/dev/null`.
 
@@ -137,8 +137,11 @@ uvx claude-env delete test-new-agent  # Moved to trash, just in case
 ```bash
 # Create and share your team's configuration
 uvx claude-env create team-setup
+uvx claude-env use team-setup
 # Configure settings, install plugins, write CLAUDE.md...
-# Push to GitHub
+
+# Publish to GitHub (repo must exist)
+uvx claude-env publish https://github.com/company/claude-setup
 
 # Team members onboard in seconds:
 uvx claude-env create team --from-repo https://github.com/company/claude-setup
@@ -160,6 +163,7 @@ uvx claude-env use team
 | `uvx claude-env list` | Show all environments (→ marks active) |
 | `uvx claude-env current` | Show active environment name |
 | `uvx claude-env delete <name>` | Move environment to trash |
+| `uvx claude-env publish <repo-url>` | Publish active environment to GitHub |
 | `uvx claude-env trash` | List deleted environments |
 | `uvx claude-env restore <backup>` | Restore from trash |
 
@@ -209,6 +213,12 @@ See [SECURITY.md](SECURITY.md) for the full story.
 
 ## Advanced Features
 
+**Publish & Share** - Push your environment to GitHub for others to clone.
+```bash
+uvx claude-env publish https://github.com/you/claude-config
+# Sensitive files (.env, credentials.json, *.key) are automatically excluded
+```
+
 **Trash & Restore** - Deleted environments go to trash with timestamps. Restore anytime.
 ```bash
 uvx claude-env delete experiment       # Moved to trash
@@ -243,7 +253,7 @@ make check    # Run all tests, type checking, linting
 ```
 
 **Project stats:**
-- 140 tests, 93% coverage
+- 157 tests, 93% coverage
 - Type-safe with `mypy --strict`
 - Code quality: A+ (97/100)
 - Zero linting violations

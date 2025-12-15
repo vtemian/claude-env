@@ -48,13 +48,27 @@ SENSITIVE_PATTERNS: set[str] = {
     "tokens.json",
 }
 
-# Substrings that indicate sensitive content
+# Substrings that indicate sensitive content (applied to data files only)
 SENSITIVE_SUBSTRINGS: set[str] = {
     "secret",
     "token",
     "password",
     "apikey",
     "api_key",
+}
+
+# Code file extensions - substring check doesn't apply to these
+# (e.g., count_tokens.js is a utility, not a credential file)
+CODE_EXTENSIONS: set[str] = {
+    ".js",
+    ".ts",
+    ".py",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".rb",
+    ".go",
+    ".rs",
 }
 
 # Directories that contain cache/temp/local data (not config)
@@ -111,10 +125,12 @@ def is_sensitive_file(filename: str) -> bool:
         if fnmatch.fnmatch(filename_lower, pattern.lower()):
             return True
 
-    # Check for sensitive substrings in filename
-    for substring in SENSITIVE_SUBSTRINGS:
-        if substring in filename_lower:
-            return True
+    # Check for sensitive substrings in filename (skip code files)
+    ext = Path(filename_lower).suffix
+    if ext not in CODE_EXTENSIONS:
+        for substring in SENSITIVE_SUBSTRINGS:
+            if substring in filename_lower:
+                return True
 
     return False
 

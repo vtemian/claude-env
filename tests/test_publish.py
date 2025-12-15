@@ -51,6 +51,16 @@ def test_is_sensitive_file_allows_safe_files():
     assert is_sensitive_file("README.md") is False
 
 
+def test_is_sensitive_file_allows_code_files_with_token_names():
+    """Test that code files with 'token' in name are allowed (utility scripts)"""
+    assert is_sensitive_file("count_tokens.js") is False
+    assert is_sensitive_file("tokenizer.py") is False
+    assert is_sensitive_file("secret_scanner.sh") is False
+    # But data files with these names are still blocked
+    assert is_sensitive_file("tokens.json") is True
+    assert is_sensitive_file("secret_config.yaml") is True
+
+
 def test_get_files_to_publish_excludes_sensitive(tmp_path):
     """Test that sensitive files are excluded from publish list"""
     # Create test environment

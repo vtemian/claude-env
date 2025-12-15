@@ -6,7 +6,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from cenv.exceptions import GitOperationError
-from cenv.publish import get_files_to_publish, is_sensitive_file, publish_to_repo
+from cenv.publish import (
+    get_files_to_publish,
+    install_plugins_from_manifest,
+    is_sensitive_file,
+    publish_to_repo,
+    transform_plugins_to_manifest,
+)
 
 
 def test_is_sensitive_file_detects_credentials():
@@ -189,3 +195,104 @@ def test_publish_environment_exported_from_core():
     from cenv.core import publish_environment
 
     assert callable(publish_environment)
+
+
+def test_transform_plugins_to_manifest_extracts_versions():
+    """Test that transform extracts plugin names and versions"""
+    installed = {
+        "version": 2,
+        "plugins": {
+            "superpowers@superpowers-marketplace": [
+                {
+                    "scope": "user",
+                    "installPath": "/Users/test/.claude/plugins/cache/superpowers",
+                    "version": "3.2.3",
+                    "installedAt": "2025-10-25T10:05:13.097Z",
+                    "lastUpdated": "2025-10-25T10:05:13.097Z",
+                    "gitCommitSha": "19e2997334eef29d0b4ab3c40a4bc124d200d1fb",
+                    "isLocal": False,
+                }
+            ]
+        },
+    }
+
+    manifest = transform_plugins_to_manifest(installed)
+
+    assert manifest == {"plugins": {"superpowers@superpowers-marketplace": "3.2.3"}}
+
+
+def test_transform_plugins_to_manifest_handles_multiple_plugins():
+    """Test that transform handles multiple plugins"""
+    installed = {
+        "version": 2,
+        "plugins": {
+            "plugin-a@marketplace": [{"version": "1.0.0"}],
+            "plugin-b@marketplace": [{"version": "2.0.0"}],
+        },
+    }
+
+    manifest = transform_plugins_to_manifest(installed)
+
+    assert manifest["plugins"]["plugin-a@marketplace"] == "1.0.0"
+    assert manifest["plugins"]["plugin-b@marketplace"] == "2.0.0"
+
+
+def test_transform_plugins_to_manifest_handles_empty():
+    """Test that transform handles empty plugins"""
+    assert transform_plugins_to_manifest({}) == {"plugins": {}}
+    assert transform_plugins_to_manifest({"plugins": {}}) == {"plugins": {}}
+
+
+def test_install_plugins_from_manifest_no_manifest(tmp_path):
+    """Test that install returns empty list when no manifest exists"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+
+    result = install_plugins_from_manifest(env_dir)
+
+    assert result == []
+
+
+@patch("subprocess.run")
+def test_install_plugins_from_manifest_installs_plugins(mock_run, tmp_path):
+    """Test that install calls claude plugin install for each plugin"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    plugins_dir = env_dir / "plugins"
+    plugins_dir.mkdir()
+    (plugins_dir / "plugins-manifest.json").write_text('{"plugins": {"test-plugin@marketplace": "1.0.0"}}')
+
+    mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+
+    result = install_plugins_from_manifest(env_dir)
+
+    assert result == ["test-plugin@marketplace"]
+    mock_run.assert_called_once_with(
+        ["claude", "plugin", "install", "test-plugin@marketplace"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+@patch("subprocess.run")
+def test_install_plugins_from_manifest_handles_failure(mock_run, tmp_path):
+    """Test that install continues when a plugin fails to install"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    plugins_dir = env_dir / "plugins"
+    plugins_dir.mkdir()
+    (plugins_dir / "plugins-manifest.json").write_text(
+        '{"plugins": {"plugin-a@mp": "1.0", "plugin-b@mp": "2.0"}}'
+    )
+
+    # First plugin fails, second succeeds
+    mock_run.side_effect = [
+        MagicMock(returncode=1, stdout="", stderr="not found"),
+        MagicMock(returncode=0, stdout="", stderr=""),
+    ]
+
+    result = install_plugins_from_manifest(env_dir)
+
+    assert result == ["plugin-b@mp"]
+    assert mock_run.call_count == 2

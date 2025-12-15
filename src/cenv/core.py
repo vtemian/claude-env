@@ -21,7 +21,7 @@ from cenv.github import clone_from_github, is_valid_github_url
 from cenv.logging_config import get_logger
 from cenv.platform_utils import check_platform_compatibility
 from cenv.process import is_claude_running
-from cenv.publish import PublishResult, publish_to_repo
+from cenv.publish import PublishResult, install_plugins_from_manifest, publish_to_repo
 from cenv.validation import validate_environment_name
 
 logger = get_logger(__name__)
@@ -316,6 +316,10 @@ def create_environment(name: str, source: str = DEFAULT_ENV_NAME) -> None:
 
         logger.info(f"Cloning from GitHub: {source}")
         clone_from_github(source, target_env)
+        # Install plugins from manifest if present
+        installed_plugins = install_plugins_from_manifest(target_env)
+        if installed_plugins:
+            logger.info(f"Installed {len(installed_plugins)} plugins from manifest")
     else:
         # Source is an environment name
         source_env = get_env_path(source)

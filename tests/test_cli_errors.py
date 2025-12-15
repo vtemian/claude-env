@@ -21,8 +21,10 @@ def test_environment_not_found_suggests_alternatives(tmp_path, monkeypatch):
     assert "cenv list" in result.output or "available" in result.output.lower()
 
 
-def test_uninit_error_suggests_init_command():
+def test_uninit_error_suggests_init_command(tmp_path, monkeypatch):
     """Test that uninitialized error suggests init command"""
+    monkeypatch.setattr("cenv.core.Path.home", lambda: tmp_path)
+
     runner = CliRunner()
 
     result = runner.invoke(cli, ["list"])

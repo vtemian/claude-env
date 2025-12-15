@@ -37,6 +37,14 @@ TRASH_DIR_NAME = ".trash"
 BACKUP_PREFIX = ".claude.backup."
 TEMP_LINK_NAME = ".claude.tmp"
 INIT_LOCK_NAME = "cenv-init.lock"
+SHARED_DIR_NAME = ".shared"
+
+# Items that should be shared across all environments
+# These will be symlinked from each env to the shared directory
+SHARED_ITEMS = [
+    "projects",  # Project-specific context and settings
+    ".credentials.json",  # OAuth credentials (when using OAuth login)
+]
 
 __all__ = [
     # Path utilities
@@ -62,6 +70,11 @@ __all__ = [
     "CLAUDE_DIR_NAME",
     "DEFAULT_ENV_NAME",
     "TRASH_DIR_NAME",
+    "SHARED_DIR_NAME",
+    "SHARED_ITEMS",
+    # Shared directory utilities
+    "get_shared_dir",
+    "setup_shared_symlinks",
 ]
 
 
@@ -83,6 +96,55 @@ def get_claude_dir() -> Path:
 def get_trash_dir() -> Path:
     """Get the trash directory for deleted environments"""
     return get_envs_dir() / TRASH_DIR_NAME
+
+
+def get_shared_dir() -> Path:
+    """Get the shared directory for items common to all environments"""
+    return get_envs_dir() / SHARED_DIR_NAME
+
+
+def setup_shared_symlinks(env_path: Path) -> None:
+    """Set up symlinks from an environment to shared items
+
+    For each item in SHARED_ITEMS:
+    - If it exists in the env and not in shared, move it to shared
+    - If it exists in shared, create symlink from env to shared
+    - Skip if item doesn't exist anywhere (will be created by Claude as needed)
+
+    Args:
+        env_path: Path to the environment directory
+    """
+    shared_dir = get_shared_dir()
+    shared_dir.mkdir(parents=True, exist_ok=True)
+
+    for item_name in SHARED_ITEMS:
+        env_item = env_path / item_name
+        shared_item = shared_dir / item_name
+
+        # Skip if already a symlink pointing to correct location
+        if env_item.is_symlink():
+            if env_item.resolve() == shared_item.resolve():
+                continue
+            # Wrong symlink target, remove it
+            env_item.unlink()
+
+        # If item exists in env but not in shared, move it to shared
+        if env_item.exists() and not env_item.is_symlink():
+            if not shared_item.exists():
+                logger.debug(f"Moving {item_name} to shared directory")
+                shutil.move(str(env_item), str(shared_item))
+            else:
+                # Both exist - keep shared, remove env copy
+                logger.debug(f"Shared {item_name} exists, removing env copy")
+                if env_item.is_dir():
+                    shutil.rmtree(env_item)
+                else:
+                    env_item.unlink()
+
+        # Create symlink if shared item exists
+        if shared_item.exists():
+            logger.debug(f"Creating symlink for {item_name}")
+            env_item.symlink_to(shared_item)
 
 
 def list_trash() -> list[dict[str, str]]:
@@ -248,6 +310,9 @@ def init_environments() -> None:
             logger.info(f"Creating symlink {claude_dir} -> {default_env}")
             claude_dir.symlink_to(default_env)
 
+            # Set up shared directories (projects, credentials)
+            setup_shared_symlinks(default_env)
+
             # Clean up backup on success
             if backup_dir and backup_dir.exists():
                 logger.debug(f"Removing backup at {backup_dir}")
@@ -330,6 +395,9 @@ def create_environment(name: str, source: str = DEFAULT_ENV_NAME) -> None:
         # Copy source to target
         logger.debug(f"Copying {source_env} to {target_env}")
         shutil.copytree(source_env, target_env, symlinks=True)
+
+    # Set up symlinks for shared items (projects, credentials)
+    setup_shared_symlinks(target_env)
 
     logger.info(f"Environment '{name}' created successfully")
 

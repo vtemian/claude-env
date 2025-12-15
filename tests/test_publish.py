@@ -260,7 +260,8 @@ def test_install_plugins_from_manifest_installs_plugins(mock_run, tmp_path):
     env_dir.mkdir()
     plugins_dir = env_dir / "plugins"
     plugins_dir.mkdir()
-    (plugins_dir / "plugins-manifest.json").write_text('{"plugins": {"test-plugin@marketplace": "1.0.0"}}')
+    manifest = '{"plugins": {"test-plugin@marketplace": "1.0.0"}}'
+    (plugins_dir / "plugins-manifest.json").write_text(manifest)
 
     mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 

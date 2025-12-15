@@ -308,6 +308,20 @@ def publish_to_repo(env_path: Path, repo_url: str) -> PublishResult:
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(file_path, target)
 
+        # Generate README.md
+        readme_content = f"""# Claude Config
+
+Use with [claude-env](https://github.com/vtemian/claude-env):
+
+```bash
+uvx claude-env init
+uvx claude-env create my-config --from-repo {repo_url}
+uvx claude-env use my-config
+```
+"""
+        (temp_dir / "README.md").write_text(readme_content)
+        logger.debug("Generated README.md")
+
         # Generate plugins manifest from installed_plugins.json if it exists
         installed_plugins_path = env_path / "plugins" / "installed_plugins.json"
         if installed_plugins_path.exists():

@@ -190,6 +190,40 @@ def test_publish_to_repo_reports_excluded_files(mock_run, tmp_path):
     assert ".env" in result.excluded_files
 
 
+@patch("subprocess.run")
+def test_publish_to_repo_generates_readme(mock_run, tmp_path):
+    """Test that publish generates a README.md with usage instructions"""
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+    (env_dir / "CLAUDE.md").write_text("# Config")
+
+    generated_readme = None
+
+    def simulate_git_ops(cmd, **kwargs):
+        nonlocal generated_readme
+        if cmd[0] == "git" and cmd[1] == "clone":
+            temp_dir = Path(cmd[5])
+            temp_dir.mkdir(parents=True)
+            (temp_dir / ".git").mkdir()
+        if cmd[0] == "git" and cmd[1] == "add":
+            # Capture the README content before it's cleaned up
+            temp_dir = Path(kwargs.get("cwd", "."))
+            readme_path = temp_dir / "README.md"
+            if readme_path.exists():
+                generated_readme = readme_path.read_text()
+        if cmd[0] == "git" and cmd[1] == "status":
+            return MagicMock(returncode=0, stdout="M file", stderr="")
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    mock_run.side_effect = simulate_git_ops
+
+    publish_to_repo(env_dir, "https://github.com/user/my-config")
+
+    assert generated_readme is not None
+    assert "claude-env" in generated_readme
+    assert "https://github.com/user/my-config" in generated_readme
+
+
 def test_publish_environment_exported_from_core():
     """Test that publish_environment is exported from core"""
     from cenv.core import publish_environment

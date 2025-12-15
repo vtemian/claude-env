@@ -1,6 +1,6 @@
 # claude-env
 
-**Switch between Claude Code configurations instantly. Share yours with the community.**
+**Share your Claude Code setup. Try anyone's in one command.**
 
 [![PyPI version](https://badge.fury.io/py/claude-env.svg)](https://badge.fury.io/py/claude-env)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -8,36 +8,33 @@
 
 ---
 
-## Quick Start
+## Try Someone's Config
 
 ```bash
-uvx claude-env init              # One-time setup
-uvx claude-env create work       # Create environment
-uvx claude-env use work          # Switch to it
-```
-
-**Try someone's config in seconds:**
-```bash
+uvx claude-env init
 uvx claude-env create tdd --from-repo https://github.com/user/claude-tdd-config
 uvx claude-env use tdd
 ```
+
+That's it. You're now running their CLAUDE.md, settings, commands, and plugins.
+
+---
+
+## Share Your Config
+
+```bash
+uvx claude-env publish https://github.com/you/my-claude-config
+```
+
+Pushes your setup to a repo (credentials excluded). Share the link - anyone can try it instantly.
 
 ---
 
 ## Why?
 
-You only get one `~/.claude` directory. One set of instructions, one settings file, one configuration for everything.
+People spend hours crafting Claude Code configs - custom instructions, slash commands, MCP servers, plugins. But there's no easy way to share them or try what others have built.
 
-claude-env gives you isolated environments you can switch between instantly. Publish your setup, share it with others, and try community configs with a single command. Think `pyenv` meets `dotfiles`, but for Claude Code.
-
----
-
-## Features
-
-- **Instant Switching** - Symlinks make switching instant. No copying.
-- **Complete Isolation** - CLAUDE.md, settings, plugins, history - all isolated.
-- **Share & Discover** - Publish your config to GitHub. Try others with one command.
-- **Safety Built-In** - Warns when Claude is running. Deleted environments go to trash.
+claude-env makes configs portable. Publish yours, try others, switch between setups instantly.
 
 ---
 
@@ -47,29 +44,12 @@ claude-env gives you isolated environments you can switch between instantly. Pub
 ~/.claude  →  symlink to active environment
 
 ~/.claude-envs/
-  ├── default/      ← Original ~/.claude (moved during init)
-  ├── work/         ← Team configuration
-  └── experiment/   ← Testing ground
+  ├── default/      ← Your original config
+  ├── tdd/          ← Someone's TDD workflow
+  └── data-science/ ← Another community config
 ```
 
-`uvx claude-env use work` atomically swaps the symlink. Claude sees a different `~/.claude` instantly.
-
----
-
-## Share Your Config
-
-**Publish your setup:**
-```bash
-uvx claude-env publish https://github.com/you/my-claude-config
-```
-
-This pushes your CLAUDE.md, settings, commands, and plugins (minus credentials) to a repo. Share the link and anyone can try it:
-
-```bash
-uvx claude-env create my-config --from-repo https://github.com/you/my-claude-config
-```
-
-Perfect for sharing team setups, teaching workflows, or showcasing your Claude customizations.
+Switching is instant - just swaps a symlink.
 
 ---
 
@@ -77,14 +57,14 @@ Perfect for sharing team setups, teaching workflows, or showcasing your Claude c
 
 | Command | Description |
 |---------|-------------|
-| `init` | Migrate `~/.claude` to `~/.claude-envs/default/` |
-| `create <name>` | Create new environment |
-| `create <name> --from-repo <url>` | Create from GitHub repo |
+| `init` | One-time setup |
+| `create <name> --from-repo <url>` | Try someone's config |
 | `use <name>` | Switch to environment |
+| `publish <repo-url>` | Share your config |
+| `create <name>` | Create empty environment |
 | `list` | Show all environments |
 | `current` | Show active environment |
 | `delete <name>` | Move to trash |
-| `publish <repo-url>` | Push to GitHub |
 | `trash` | List deleted environments |
 | `restore <name>` | Restore from trash |
 

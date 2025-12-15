@@ -14,6 +14,10 @@ uvx claude-env create tdd --from-repo https://github.com/user/claude-tdd-config
 uvx claude-env use tdd
 ```
 
+
+https://github.com/user-attachments/assets/88a14c52-0672-4dca-a60b-7f8211418d73
+
+
 ## Share Your Config
 
 ```bash

@@ -36,6 +36,7 @@ Changelog = "https://github.com/vtemian/claude-env/blob/main/CHANGELOG.md"
 
 [project.scripts]
 cenv = "cenv.cli:cli"
+claude-env = "cenv.cli:cli"
 
 [build-system]
 requires = ["hatchling"]

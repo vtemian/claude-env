@@ -2,6 +2,7 @@
 # ABOUTME: Replaces absolute paths with placeholders and expands them back
 """Path portability utilities for cenv"""
 
+import json
 import re
 from pathlib import Path
 from typing import Any
@@ -210,3 +211,62 @@ def expand_placeholders_to_paths(content: dict[str, Any]) -> dict[str, Any]:
     user_home = str(_get_user_home())
 
     return _walk_and_expand(content, claude_home, user_home)
+
+
+def process_json_files_for_publish(directory: Path) -> list[str]:
+    """Process all JSON files in directory for publish (substitute paths)
+
+    Args:
+        directory: Directory to process
+
+    Returns:
+        List of warning messages about unsubstitutable paths
+    """
+    all_warnings: list[str] = []
+
+    for json_file in directory.rglob("*.json"):
+        if not json_file.is_file():
+            continue
+
+        try:
+            content = json.loads(json_file.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Could not parse {json_file.name}: {e}")
+            continue
+
+        transformed, warnings = substitute_paths_with_placeholders(content)
+
+        # Format warnings with filename
+        for warning in warnings:
+            all_warnings.append(f"{json_file.name}: {warning}")
+
+        # Write back if changed
+        if transformed != content:
+            json_file.write_text(json.dumps(transformed, indent=2) + "\n")
+            logger.debug(f"Transformed paths in {json_file.name}")
+
+    return all_warnings
+
+
+def process_json_files_for_import(directory: Path) -> None:
+    """Process all JSON files in directory for import (expand placeholders)
+
+    Args:
+        directory: Directory to process
+    """
+    for json_file in directory.rglob("*.json"):
+        if not json_file.is_file():
+            continue
+
+        try:
+            content = json.loads(json_file.read_text())
+        except (json.JSONDecodeError, OSError) as e:
+            logger.warning(f"Could not parse {json_file.name}: {e}")
+            continue
+
+        expanded = expand_placeholders_to_paths(content)
+
+        # Write back if changed
+        if expanded != content:
+            json_file.write_text(json.dumps(expanded, indent=2) + "\n")
+            logger.debug(f"Expanded placeholders in {json_file.name}")

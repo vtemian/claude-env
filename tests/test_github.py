@@ -142,3 +142,42 @@ def test_clone_timeout_raises_error(tmp_path):
 
         error_msg = str(exc_info.value).lower()
         assert "timed out" in error_msg or "timeout" in error_msg
+
+
+@patch("subprocess.run")
+def test_clone_from_github_expands_placeholders_in_json(mock_run, tmp_path):
+    """Test that clone expands placeholders to local paths in JSON files"""
+    import json
+
+    target = tmp_path / "test-env"
+
+    def simulate_git_clone(cmd, **kwargs):
+        if cmd[0] == "git" and cmd[1] == "clone":
+            temp_dir = Path(cmd[5])
+            temp_dir.mkdir(parents=True)
+            (temp_dir / ".git").mkdir()
+            # Create JSON file with placeholders (as if published)
+            settings = temp_dir / "settings.json"
+            settings.write_text(
+                json.dumps(
+                    {
+                        "pluginPath": "{{CLAUDE_HOME}}/plugins/cache",
+                        "projectPath": "{{USER_HOME}}/projects/myproject",
+                    }
+                )
+            )
+        return MagicMock(returncode=0)
+
+    mock_run.side_effect = simulate_git_clone
+
+    clone_from_github("https://github.com/user/repo", target)
+
+    # Verify placeholders were expanded to local paths
+    settings = target / "settings.json"
+    content = json.loads(settings.read_text())
+
+    expected_claude_home = str(Path.home() / ".claude")
+    expected_user_home = str(Path.home())
+
+    assert content["pluginPath"] == f"{expected_claude_home}/plugins/cache"
+    assert content["projectPath"] == f"{expected_user_home}/projects/myproject"

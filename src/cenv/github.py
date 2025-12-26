@@ -7,6 +7,7 @@ from pathlib import Path
 
 from cenv.config import get_config
 from cenv.exceptions import GitOperationError
+from cenv.path_portability import process_json_files_for_import
 
 __all__ = [
     "is_valid_github_url",
@@ -63,6 +64,9 @@ def clone_from_github(url: str, target: Path) -> None:
         git_dir = temp_dir / ".git"
         if git_dir.exists():
             shutil.rmtree(git_dir)
+
+        # Expand path placeholders for portability
+        process_json_files_for_import(temp_dir)
 
         # Move to final location
         if target.exists():

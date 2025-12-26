@@ -379,3 +379,61 @@ def test_process_json_files_for_import_handles_malformed_json(tmp_path):
 
     # File should be unchanged
     assert json_file.read_text() == "{ not valid json }"
+
+
+# ============================================================================
+# Cross-Platform Path Tests (Task 7)
+# ============================================================================
+
+
+def test_substitute_paths_handles_windows_forward_slashes():
+    """Test that Windows-style paths with forward slashes are handled"""
+    from cenv.path_portability import substitute_paths_with_placeholders
+
+    with patch(
+        "cenv.path_portability._get_claude_home", return_value=Path("C:/Users/vlad/.claude")
+    ):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("C:/Users/vlad")):
+            # Windows paths might have forward slashes
+            content = {"path": "C:/Users/vlad/.claude/plugins"}
+            result, warnings = substitute_paths_with_placeholders(content)
+
+    assert result == {"path": "{{CLAUDE_HOME}}/plugins"}
+
+
+def test_expand_placeholders_uses_native_separators():
+    """Test that expanded paths use the platform's native separators"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch("cenv.path_portability._get_claude_home", return_value=Path("/Users/test/.claude")):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/test")):
+            content = {"path": "{{CLAUDE_HOME}}/plugins/cache"}
+            result = expand_placeholders_to_paths(content)
+
+    # Path should use the mocked path's format
+    assert result == {"path": "/Users/test/.claude/plugins/cache"}
+
+
+def test_substitute_paths_empty_json():
+    """Test that empty JSON objects are handled"""
+    from cenv.path_portability import substitute_paths_with_placeholders
+
+    with patch("cenv.path_portability._get_claude_home", return_value=Path("/Users/vlad/.claude")):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/vlad")):
+            content: dict = {}
+            result, warnings = substitute_paths_with_placeholders(content)
+
+    assert result == {}
+    assert warnings == []
+
+
+def test_expand_placeholders_empty_json():
+    """Test that empty JSON objects are handled during expansion"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch("cenv.path_portability._get_claude_home", return_value=Path("/Users/test/.claude")):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/test")):
+            content: dict = {}
+            result = expand_placeholders_to_paths(content)
+
+    assert result == {}

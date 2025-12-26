@@ -5,7 +5,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from cenv.logging_config import get_logger
 
@@ -109,20 +109,20 @@ def _walk_and_substitute(
     all_warnings: list[str] = []
 
     if isinstance(obj, dict):
-        result = {}
+        dict_result: dict[str, Any] = {}
         for key, value in obj.items():
             transformed, warnings = _walk_and_substitute(value, claude_home, user_home)
-            result[key] = transformed
+            dict_result[key] = transformed
             all_warnings.extend(warnings)
-        return result, all_warnings
+        return dict_result, all_warnings
 
     if isinstance(obj, list):
-        result = []
+        list_result: list[Any] = []
         for item in obj:
             transformed, warnings = _walk_and_substitute(item, claude_home, user_home)
-            result.append(transformed)
+            list_result.append(transformed)
             all_warnings.extend(warnings)
-        return result, all_warnings
+        return list_result, all_warnings
 
     if isinstance(obj, str):
         return _substitute_in_string(obj, claude_home, user_home)
@@ -210,7 +210,8 @@ def expand_placeholders_to_paths(content: dict[str, Any]) -> dict[str, Any]:
     claude_home = str(_get_claude_home())
     user_home = str(_get_user_home())
 
-    return _walk_and_expand(content, claude_home, user_home)
+    # Input is dict, so output is dict - cast for type checker
+    return cast(dict[str, Any], _walk_and_expand(content, claude_home, user_home))
 
 
 def process_json_files_for_publish(directory: Path) -> list[str]:

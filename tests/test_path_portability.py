@@ -1,9 +1,8 @@
 # ABOUTME: Tests for path portability functionality
 # ABOUTME: Validates path substitution and expansion for config import/export
+import json
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 
 def test_substitute_paths_replaces_claude_home():
@@ -234,8 +233,6 @@ def test_expand_placeholders_preserves_non_string_values():
 # File Processing Tests (Task 3)
 # ============================================================================
 
-import json
-
 
 def test_process_json_files_for_publish_transforms_files(tmp_path):
     """Test that JSON files are transformed with placeholders on publish"""
@@ -318,7 +315,7 @@ def test_process_json_files_for_publish_handles_malformed_json(tmp_path, caplog)
     with patch("cenv.path_portability._get_claude_home", return_value=Path("/Users/vlad/.claude")):
         with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/vlad")):
             # Should not raise
-            warnings = process_json_files_for_publish(tmp_path)
+            process_json_files_for_publish(tmp_path)
 
     # File should be unchanged
     assert json_file.read_text() == "{ not valid json }"
@@ -437,3 +434,66 @@ def test_expand_placeholders_empty_json():
             result = expand_placeholders_to_paths(content)
 
     assert result == {}
+
+
+# ============================================================================
+# Round-Trip Integration Test (Task 8)
+# ============================================================================
+
+
+def test_round_trip_publish_then_import(tmp_path):
+    """Test that publish followed by import produces correct local paths"""
+    from cenv.path_portability import (
+        process_json_files_for_import,
+        process_json_files_for_publish,
+    )
+
+    # Simulate User A publishing
+    publish_dir = tmp_path / "publish"
+    publish_dir.mkdir()
+
+    user_a_home = "/Users/userA"
+    user_a_claude = "/Users/userA/.claude"
+
+    original_content = {
+        "plugins": {
+            "superpowers": {
+                "installPath": f"{user_a_claude}/plugins/cache/superpowers",
+                "configPath": f"{user_a_home}/projects/config.json",
+            }
+        },
+        "settings": {"logLevel": "debug", "maxTokens": 4096},
+    }
+
+    json_file = publish_dir / "config.json"
+    json_file.write_text(json.dumps(original_content))
+
+    # Publish (substitute paths)
+    with patch("cenv.path_portability._get_claude_home", return_value=Path(user_a_claude)):
+        with patch("cenv.path_portability._get_user_home", return_value=Path(user_a_home)):
+            process_json_files_for_publish(publish_dir)
+
+    # Verify placeholders are in the file
+    published = json.loads(json_file.read_text())
+    assert "{{CLAUDE_HOME}}" in published["plugins"]["superpowers"]["installPath"]
+    assert "{{USER_HOME}}" in published["plugins"]["superpowers"]["configPath"]
+
+    # Simulate User B importing
+    user_b_home = "/home/userB"
+    user_b_claude = "/home/userB/.claude"
+
+    with patch("cenv.path_portability._get_claude_home", return_value=Path(user_b_claude)):
+        with patch("cenv.path_portability._get_user_home", return_value=Path(user_b_home)):
+            process_json_files_for_import(publish_dir)
+
+    # Verify paths are expanded to User B's paths
+    imported = json.loads(json_file.read_text())
+    assert (
+        imported["plugins"]["superpowers"]["installPath"]
+        == f"{user_b_claude}/plugins/cache/superpowers"
+    )
+    assert imported["plugins"]["superpowers"]["configPath"] == f"{user_b_home}/projects/config.json"
+
+    # Verify non-path values are unchanged
+    assert imported["settings"]["logLevel"] == "debug"
+    assert imported["settings"]["maxTokens"] == 4096

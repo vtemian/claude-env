@@ -24,6 +24,15 @@ https://github.com/user-attachments/assets/88a14c52-0672-4dca-a60b-7f8211418d73
 uvx claude-env publish https://github.com/you/my-claude-config
 ```
 
+## Path Portability
+
+Configs are automatically made portable across machines:
+
+- **On publish**: Absolute paths like `/Users/you/.claude/...` become `{{CLAUDE_HOME}}/...`
+- **On import**: Placeholders expand to your local paths
+
+This means configs "just work" when shared between different users and machines. Paths that can't be made portable (like `/usr/local/bin/tool`) trigger a warning during publish.
+
 ## Commands
 
 | Command | Description |

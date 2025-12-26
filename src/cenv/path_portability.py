@@ -146,3 +146,67 @@ def substitute_paths_with_placeholders(
 
     result, warnings = _walk_and_substitute(content, claude_home, user_home)
     return result, warnings
+
+
+def _expand_in_string(
+    value: str,
+    claude_home: str,
+    user_home: str,
+) -> str:
+    """Expand placeholders in a single string value
+
+    Args:
+        value: String to process
+        claude_home: Claude home directory path
+        user_home: User home directory path
+
+    Returns:
+        String with placeholders expanded
+    """
+    result = value
+    result = result.replace(PLACEHOLDER_CLAUDE_HOME, claude_home)
+    result = result.replace(PLACEHOLDER_USER_HOME, user_home)
+    return result
+
+
+def _walk_and_expand(
+    obj: Any,
+    claude_home: str,
+    user_home: str,
+) -> Any:
+    """Recursively walk JSON structure and expand placeholders
+
+    Args:
+        obj: JSON object (dict, list, or primitive)
+        claude_home: Claude home directory path
+        user_home: User home directory path
+
+    Returns:
+        Transformed object with placeholders expanded
+    """
+    if isinstance(obj, dict):
+        return {key: _walk_and_expand(value, claude_home, user_home) for key, value in obj.items()}
+
+    if isinstance(obj, list):
+        return [_walk_and_expand(item, claude_home, user_home) for item in obj]
+
+    if isinstance(obj, str):
+        return _expand_in_string(obj, claude_home, user_home)
+
+    # Numbers, booleans, None - return unchanged
+    return obj
+
+
+def expand_placeholders_to_paths(content: dict[str, Any]) -> dict[str, Any]:
+    """Expand placeholders to local paths for import
+
+    Args:
+        content: Parsed JSON content with placeholders
+
+    Returns:
+        Content with placeholders expanded to local paths
+    """
+    claude_home = str(_get_claude_home())
+    user_home = str(_get_user_home())
+
+    return _walk_and_expand(content, claude_home, user_home)

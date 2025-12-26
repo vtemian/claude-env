@@ -127,3 +127,104 @@ def test_substitute_paths_no_double_substitution():
 
     assert result == {"path": "{{CLAUDE_HOME}}/already/substituted"}
     assert warnings == []
+
+
+# ============================================================================
+# Placeholder Expansion Tests (Task 2)
+# ============================================================================
+
+
+def test_expand_placeholders_expands_claude_home():
+    """Test that {{CLAUDE_HOME}} is expanded to local Claude directory"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch(
+        "cenv.path_portability._get_claude_home", return_value=Path("/Users/newuser/.claude")
+    ):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/newuser")):
+            content = {"path": "{{CLAUDE_HOME}}/plugins/cache/foo"}
+            result = expand_placeholders_to_paths(content)
+
+    assert result == {"path": "/Users/newuser/.claude/plugins/cache/foo"}
+
+
+def test_expand_placeholders_expands_user_home():
+    """Test that {{USER_HOME}} is expanded to local home directory"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch(
+        "cenv.path_portability._get_claude_home", return_value=Path("/Users/newuser/.claude")
+    ):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/newuser")):
+            content = {"path": "{{USER_HOME}}/projects/myproject"}
+            result = expand_placeholders_to_paths(content)
+
+    assert result == {"path": "/Users/newuser/projects/myproject"}
+
+
+def test_expand_placeholders_handles_both_in_same_string():
+    """Test that both placeholders in same string are expanded"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch("cenv.path_portability._get_claude_home", return_value=Path("/home/user/.claude")):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/home/user")):
+            content = {"cmd": "cp {{CLAUDE_HOME}}/a {{USER_HOME}}/b"}
+            result = expand_placeholders_to_paths(content)
+
+    assert result == {"cmd": "cp /home/user/.claude/a /home/user/b"}
+
+
+def test_expand_placeholders_handles_nested_objects():
+    """Test that nested JSON objects are traversed during expansion"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch(
+        "cenv.path_portability._get_claude_home", return_value=Path("/Users/newuser/.claude")
+    ):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/newuser")):
+            content = {"level1": {"level2": {"path": "{{CLAUDE_HOME}}/deep/path"}}}
+            result = expand_placeholders_to_paths(content)
+
+    assert result["level1"]["level2"]["path"] == "/Users/newuser/.claude/deep/path"
+
+
+def test_expand_placeholders_handles_arrays():
+    """Test that arrays are processed during expansion"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch(
+        "cenv.path_portability._get_claude_home", return_value=Path("/Users/newuser/.claude")
+    ):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/newuser")):
+            content = {
+                "paths": ["{{CLAUDE_HOME}}/path1", "{{USER_HOME}}/path2", "not-a-placeholder"]
+            }
+            result = expand_placeholders_to_paths(content)
+
+    assert result["paths"] == [
+        "/Users/newuser/.claude/path1",
+        "/Users/newuser/path2",
+        "not-a-placeholder",
+    ]
+
+
+def test_expand_placeholders_preserves_non_string_values():
+    """Test that numbers, booleans, null are unchanged during expansion"""
+    from cenv.path_portability import expand_placeholders_to_paths
+
+    with patch(
+        "cenv.path_portability._get_claude_home", return_value=Path("/Users/newuser/.claude")
+    ):
+        with patch("cenv.path_portability._get_user_home", return_value=Path("/Users/newuser")):
+            content = {
+                "count": 42,
+                "enabled": True,
+                "nothing": None,
+                "path": "{{CLAUDE_HOME}}/file",
+            }
+            result = expand_placeholders_to_paths(content)
+
+    assert result["count"] == 42
+    assert result["enabled"] is True
+    assert result["nothing"] is None
+    assert result["path"] == "/Users/newuser/.claude/file"

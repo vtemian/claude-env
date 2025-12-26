@@ -14,6 +14,7 @@ from cenv.config import get_config
 from cenv.exceptions import GitOperationError
 from cenv.github import is_valid_github_url
 from cenv.logging_config import get_logger
+from cenv.path_portability import process_json_files_for_publish
 
 logger = get_logger(__name__)
 
@@ -323,6 +324,14 @@ def publish_to_repo(env_path: Path, repo_url: str) -> PublishResult:
             target = temp_dir / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(file_path, target)
+
+        # Process JSON files for path portability
+        logger.info("Processing JSON files for path portability")
+        path_warnings = process_json_files_for_publish(temp_dir)
+        if path_warnings:
+            logger.warning("Some paths could not be made portable:")
+            for warning in path_warnings:
+                logger.warning(f"  - {warning}")
 
         # Generate README.md
         readme_content = f"""# Claude Config

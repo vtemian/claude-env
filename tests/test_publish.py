@@ -341,3 +341,50 @@ def test_install_plugins_from_manifest_handles_failure(mock_run, tmp_path):
 
     assert result == ["plugin-b@mp"]
     assert mock_run.call_count == 2
+
+
+@patch("subprocess.run")
+def test_publish_to_repo_substitutes_paths_in_json(mock_run, tmp_path):
+    """Test that publish substitutes absolute paths with placeholders in JSON files"""
+    import json
+
+    env_dir = tmp_path / "test-env"
+    env_dir.mkdir()
+
+    # Create JSON file with absolute path
+    settings = env_dir / "settings.json"
+    home = str(Path.home())
+    claude_home = str(Path.home() / ".claude")
+    settings.write_text(
+        json.dumps(
+            {
+                "pluginPath": f"{claude_home}/plugins/cache",
+                "projectPath": f"{home}/projects/myproject",
+            }
+        )
+    )
+
+    captured_json = {}
+
+    def simulate_git_ops(cmd, **kwargs):
+        if cmd[0] == "git" and cmd[1] == "clone":
+            temp_dir = Path(cmd[5])
+            temp_dir.mkdir(parents=True)
+            (temp_dir / ".git").mkdir()
+        if cmd[0] == "git" and cmd[1] == "add":
+            # Capture the transformed JSON content
+            temp_dir = Path(kwargs.get("cwd", "."))
+            settings_path = temp_dir / "settings.json"
+            if settings_path.exists():
+                captured_json["settings"] = json.loads(settings_path.read_text())
+        if cmd[0] == "git" and cmd[1] == "status":
+            return MagicMock(returncode=0, stdout="M file", stderr="")
+        return MagicMock(returncode=0, stdout="", stderr="")
+
+    mock_run.side_effect = simulate_git_ops
+
+    publish_to_repo(env_dir, "https://github.com/user/repo")
+
+    # Verify paths were substituted with placeholders
+    assert captured_json["settings"]["pluginPath"] == "{{CLAUDE_HOME}}/plugins/cache"
+    assert captured_json["settings"]["projectPath"] == "{{USER_HOME}}/projects/myproject"

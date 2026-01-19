@@ -1,0 +1,18 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y git gcc python3-dev && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user to better simulate real usage
+RUN useradd -m testuser
+
+WORKDIR /app
+COPY . .
+
+# Install as root, then fix permissions
+RUN pip install -e . && \
+    chmod -R a+rX /app
+
+USER testuser
+WORKDIR /home/testuser
+
+CMD ["/app/scripts/test-path-portability.sh"]

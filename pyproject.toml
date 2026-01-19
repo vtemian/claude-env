@@ -1,6 +1,6 @@
 [project]
 name = "claude-env"
-version = "0.2.1"
+version = "0.3.0"
 description = "Claude environment manager - switch between Claude Code configurations"
 readme = "README.md"
 license = {text = "MIT"}
